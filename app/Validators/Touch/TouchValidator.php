@@ -14,7 +14,7 @@ class TouchValidator extends BaseValidator {
         $this->rules = [
             "_id" => fn($data) => !$data || Uuid::isValid($data),
             "ownerId" => fn($data) => !$data || Uuid::isValid($data),
-
+            "title" => fn($data) => !$data || is_string($data),
             "createdAt" => fn($data) => validateDate($data),
             "modifiedAt" => fn($data) => validateDate($data),
 

@@ -6,6 +6,9 @@ use Ramsey\Uuid\Uuid;
 
 defined( 'ABSPATH' ) || exit;
 
+function authorize() {
+    return current_user_can( 'manage_options' );
+}
 
 function createSearchable(array $fields, array $doc) {
     $txt = "";

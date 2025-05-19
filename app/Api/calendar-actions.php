@@ -7,7 +7,7 @@ add_action('rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'ExpertsCrm\Actions\CalendarAction::list',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ));
 });

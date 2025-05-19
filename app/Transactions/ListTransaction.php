@@ -3,6 +3,7 @@
 namespace ExpertsCrm\Transactions;
 
 use ExpertsCrm\DataObjects\Models\List\ListConfig;
+use ExpertsCrm\DataObjects\Models\ListResult;
 use ExpertsCrm\DataObjects\Transactions\List\ViewConfig;
 use ExpertsCrm\Models\ActionModel;
 use ExpertsCrm\Models\AssetModel;
@@ -15,6 +16,18 @@ class ListTransaction {
     static function list (ListConfig $config)
     {
         $lists = ListModel::list($config);
+        $listIds = array_map(function ($item) { return $item["_id"];}, $lists->toArray()['docs']);
+        $counted = PeopleModel::cnt($listIds);
+
+        $docs = [];
+        $data = $lists->toArray()['docs'];
+
+        foreach ($data as $doc) {
+           $doc['people'] = $counted[$doc['_id']];
+           $docs[] = $doc;
+        }
+
+        $lists = new ListResult($docs, $lists->toArray()['hasMore']);
 
         if (!$config->expanded) {
             return $lists;
@@ -24,6 +37,8 @@ class ListTransaction {
         foreach ($lists as $list) {
             $map[$list["_id"]] = $list;
         }
+
+
 
 
         $assets = AssetTransaction::fetchByObjectId(array_keys($map));

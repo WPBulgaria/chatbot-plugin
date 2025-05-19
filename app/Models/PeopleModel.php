@@ -16,18 +16,47 @@ class PeopleModel extends BaseModel {
         return $wpdb->prefix."experts_crm_people";
     }
 
+
+    static function cnt(array $listIds) {
+        global $wpdb;
+        $in = implode("','", $listIds);
+        $listId = !empty($config->listId) ? "AND list_id IN ('$in')" : "";
+        $table = self::getTable();
+        $query = $wpdb->prepare("SELECT list_id, COUNT(*) as people FROM $table WHERE removed_at IS NULL $listId GROUP BY list_id");
+
+        $result = $wpdb->get_results( $query, ARRAY_A);
+        $lists = [];
+        if (is_array($result)) {
+            foreach ($result as $row) {
+                $lists[$row['list_id']] = (int) $row['people'];
+            }
+        }
+
+        return $lists;
+    }
+
     static function list(ListConfig $config) {
         global $wpdb;
 
         $table = self::getTable();
 
-        $count = self::PER_PAGE + 1;
-        $offset = $config->pointer * self::PER_PAGE;
+        $count = $config->limit + 1;
+        $offset = $config->pointer * $config->limit;
         $search = !empty($config->query) ? "AND MATCH(search_text) AGAINST(%s IN BOOLEAN MODE)" : '';
         $listId = !empty($config->listId) ? "AND list_id=%s" : "";
         $sort = $config->sort ?? SortOptions::DESC->value;
 
-        $query = $wpdb->prepare("SELECT * FROM $table WHERE removed_at IS NULL $search $listId ORDER BY created_at $sort LIMIT $offset, $count", $config->query, $listId);
+        $queryStr = "SELECT * FROM $table WHERE removed_at IS NULL $search $listId ORDER BY created_at $sort LIMIT $offset, $count";
+
+        if ($search && $listId) {
+            $query = $wpdb->prepare($queryStr, $config->query, $config->listId);
+        } elseif ($search) {
+            $query = $wpdb->prepare($queryStr, $config->query);
+        } else {
+            $query = $wpdb->prepare($queryStr, $config->listId);
+        }
+
+
 
         $rows = $wpdb->get_results( $query, ARRAY_A);
         if (empty($rows)) {
@@ -36,7 +65,7 @@ class PeopleModel extends BaseModel {
 
         $listIds = [];
         foreach ($rows as $key => $row) {
-            if ($key === self::PER_PAGE) {
+            if ($key === $config->limit) {
                 break;
             }
             $doc = json_decode($row['doc'], true);

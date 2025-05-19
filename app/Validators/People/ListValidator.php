@@ -17,6 +17,7 @@ class ListValidator extends BaseValidator {
             "pointer" => fn($data) => !!is_int($data),
             "query" => fn($data) => !$data || is_string($data),
             "expanded" => fn($data) => !$data || is_bool($data),
+            "limit" => fn($data) => !$data || is_int($data),
         ];
     }
 
@@ -41,7 +42,8 @@ class ListValidator extends BaseValidator {
           $this->data["query"],
           $this->data["listId"],
           $this->data["expanded"],
-          $this->data["sort"] ?? ""
+          $this->data["sort"] ?? "",
+          $this->data["limit"]
         );
     }
 }

@@ -31,6 +31,7 @@ class AssetModel extends BaseModel {
 
         $query = $wpdb->prepare("SELECT * FROM $table WHERE removed_at IS NULL $inWhere $search ORDER BY created_at $sort LIMIT $offset, $count", $config->query);
 
+
         $rows = $wpdb->get_results( $query, ARRAY_A);
         if (empty($rows)) {
             return new ListResult([], false);

@@ -21,7 +21,8 @@
             const iBody = el.contents().find(".content-area");
             if (iBody.length) {
                 new ResizeObserver(function() {
-                    var height = iBody.scrollHeight > document.body.offsetHeight ? iBody.scrollHeight : document.body.offsetHeight;
+                    var height = iBody[0].scrollHeight > document.body.offsetHeight ? iBody[0].scrollHeight : document.body.offsetHeight;
+
                     el.height(height + 50);
                 }).observe(iBody[0]);
             }

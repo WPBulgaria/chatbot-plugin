@@ -7,7 +7,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'ExpertsCrm\Actions\OpportunityAction::view',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ) );
 } );
@@ -17,7 +17,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'ExpertsCrm\Actions\OpportunityAction::trash',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ) );
 });
@@ -27,7 +27,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'PUT',
         'callback' => 'ExpertsCrm\Actions\OpportunityAction::store',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ) );
 });
@@ -37,7 +37,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'ExpertsCrm\Actions\OpportunityAction::store',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ) );
 });
@@ -47,7 +47,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'ExpertsCrm\Actions\OpportunityAction::list',
         'permission_callback' => function () {
-            return current_user_can("manage_options");
+            return  \ExpertsCrm\authorize();
         }
     ) );
 });

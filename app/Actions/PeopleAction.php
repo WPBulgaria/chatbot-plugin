@@ -16,8 +16,9 @@ class PeopleAction {
 
         $data = $request->get_params();
         $listData['pointer'] = (int) ($data['pointer'] ?? 0);
+        $listData['limit'] = (int) ($data['limit'] ?? 20);
         $listData['query'] = sanitize_text_field($data['query'] ?? "");
-        $listData["listId"] = sanitize_key( $data['list_id'] ?? null );
+        $listData["listId"] = sanitize_key( $data['listId'] ?? null );
         $listData['expanded'] = !empty($request->get_param('expanded'));
         $listData["sort"] = sanitize_key( $data['sort'] ?? "" );
 
