@@ -12,21 +12,10 @@
         };
 
         var el = $("<iframe></iframe>");
-        el.attr("style", "width: 100%; border: 0;");
+        el.attr("style", "width: 100%;  height: 98vh; border: 0;");
         el.attr("src", "/wp-content/plugins/experts-crm/assets/plugin.html" + window.location.hash);
         el.attr("id", "experts-crm-iframe")
         $("#experts-crm-iframe-container").append(el);
-
-        el.on("load", function () {
-            const iBody = el.contents().find(".content-area");
-            if (iBody.length) {
-                new ResizeObserver(function() {
-                    var height = iBody[0].scrollHeight > document.body.offsetHeight ? iBody[0].scrollHeight : document.body.offsetHeight;
-
-                    el.height(height + 50);
-                }).observe(iBody[0]);
-            }
-        })
     })
 </script>
 

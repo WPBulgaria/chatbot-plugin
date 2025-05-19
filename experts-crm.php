@@ -5,7 +5,7 @@ Plugin Name: Experts CRM
 Plugin URI: https://crm.experts.pub
 Description: A superb CRM that helps you broke the limits of your freelance business.
 Author: Sashe Vuchkov
-Version: 1.1.0
+Version: 1.2.0
 Author URI: https://buhalbu.com/hire
 Text Domain: experts-crm
 **/

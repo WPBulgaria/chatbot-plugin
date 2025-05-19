@@ -32,10 +32,12 @@ class CalendarModel extends BaseModel {
 
         $query = $wpdb->prepare(
             "SELECT actions.*,
-                    (SELECT doc FROM $assetsTable AS assets WHERE assets.id = actions.parent_id) AS `object`
+                    assets.doc AS `object`
                    FROM $actionsTable AS actions 
+                   INNER JOIN $assetsTable AS assets ON assets.id = actions.parent_id
                    WHERE 
-                       removed_at IS NULL
+                       actions.removed_at IS NULL
+                       AND assets.removed_at IS NULL 
                        AND ((actions.starts_at > %s AND actions.starts_at < %s AND actions.repeat_until IS NULL) 
                       OR (actions.finishes_at < %s AND actions.repeat_until IS NULL)
                       OR (actions.repeat_until < %s AND actions.completed_at IS NULL)
@@ -71,10 +73,12 @@ class CalendarModel extends BaseModel {
 
         $query = $wpdb->prepare(
             "SELECT actions.*,
-                    (SELECT doc FROM $assetsTable AS assets WHERE assets.id = actions.parent_id) AS `object`
+                    assets.doc AS `object`
                    FROM $actionsTable AS actions 
-                   WHERE parent_id = %s
-                   AND removed_at IS NULL
+                   INNER JOIN $assetsTable AS assets ON assets.id = actions.parent_id
+                   WHERE assets.parent_id = %s
+                   AND actions.removed_at IS NULL
+                   AND assets.removed_at IS NULL  
                       AND ((actions.starts_at > %s AND actions.starts_at < %s AND actions.repeat_until IS NULL) 
                       OR (actions.finishes_at < %s AND actions.repeat_until IS NULL)
                       OR (actions.repeat_until < %s AND actions.completed_at IS NULL)
@@ -111,10 +115,12 @@ class CalendarModel extends BaseModel {
 
         $query = $wpdb->prepare(
             "SELECT actions.*,
-                    (SELECT doc FROM $assetsTable AS assets WHERE assets.id = actions.parent_id) AS `object`
+                    assets.doc AS `object`
                    FROM $actionsTable AS actions 
-                   WHERE parent_type = %s
-                      AND removed_at IS NULL
+                   INNER JOIN $assetsTable AS assets ON assets.id = actions.parent_id
+                   WHERE assets.parent_type = %s
+                      AND actions.removed_at IS NULL
+                      AND assets.removed_at IS NULL 
                       AND ((actions.starts_at > %s AND actions.starts_at < %s AND actions.repeat_until IS NULL) 
                       OR (actions.finishes_at < %s AND actions.repeat_until IS NULL)
                       OR (actions.repeat_until < %s AND actions.completed_at IS NULL)
