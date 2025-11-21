@@ -1,6 +1,6 @@
 <?php
 
-namespace ExpertsCrm\Validators;
+namespace WPBulgaria\Chatbot\Validators;
 
 defined( 'ABSPATH' ) || exit;
 

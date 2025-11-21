@@ -1,6 +1,6 @@
 <?php
 
-namespace ExpertsCrm\Transformers;
+namespace WPBulgaria\Chatbot\Transformers;
 
 defined( 'ABSPATH' ) || exit;
 

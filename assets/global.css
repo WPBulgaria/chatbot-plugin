@@ -1,0 +1,7 @@
+#wpcontent{
+    padding-left: 0 !important;
+}
+
+#wp-chatbot-admin-container{
+    isolation: isolate;
+}

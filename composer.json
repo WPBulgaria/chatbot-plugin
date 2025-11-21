@@ -1,18 +1,24 @@
 {
-    "name": "sashe/experts-crm",
+    "name": "wpbulgaria/wpb-chatbot",
     "authors": [
         {
             "name": "Sashe Vuchkov",
-            "email": "sashevuchkov@gmail.com"
+            "email": "sashe@buhalbu.com"
         }
     ],
     "require": {
-        "ramsey/uuid": "^4.7"
+        "ramsey/uuid": "^4.7",
+        "guzzlehttp/guzzle": "^7.10",
+        "google-gemini-php/client": "^2.7"
     },
     "autoload": {
         "psr-4": {
-            "ExpertsCrm\\": "app/"
+            "WPBulgaria\\Chatbot\\": "app/"
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": false
         }
     }
-
 }

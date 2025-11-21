@@ -1,6 +1,6 @@
 <?php
 
-namespace ExpertsCrm\DataObjects\Models;
+namespace WPBulgaria\Chatbot\DataObjects\Models;
 
 defined( 'ABSPATH' ) || exit;
 
