@@ -47,10 +47,11 @@ class FileAction {
         }
 
         $attachment_data = [
-            'post_mime_type' => $uploaded['type'],
+            'post_mime_type' => $file['type'],
             'post_title'     => sanitize_file_name(pathinfo($file['name'], PATHINFO_FILENAME)),
             'post_content'   => '',
-            'post_status'    => 'inherit'
+            'post_status'    => 'inherit',
+            'post_author'    => get_current_user_id(),
         ];
 
         $attachment_id = wp_insert_attachment($attachment_data, $uploaded['file']);
@@ -116,7 +117,8 @@ class FileAction {
             'posts_per_page' => $per_page,
             'paged'          => $page,
             'orderby'        => 'date',
-            'order'          => 'DESC'
+            'order'          => 'DESC',
+            'post_mime_type' => array_values(self::$allowed_types),
         ];
 
         $query = new \WP_Query($args);
@@ -128,7 +130,7 @@ class FileAction {
                 'url'  => wp_get_attachment_url($attachment->ID),
                 'name' => $attachment->post_title,
                 'type' => $attachment->post_mime_type,
-                'size' => $attachment->post_content_filtered,
+                'size' => filesize(get_attached_file($attachment->ID)),
                 'path' => get_attached_file($attachment->ID),
                 'createdAt' => $attachment->post_date_gmt,
                 'modifiedAt' => $attachment->post_modified_gmt,
