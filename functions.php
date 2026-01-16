@@ -21,3 +21,16 @@ function validateDate($date, $format = DATE_ATOM)
         return false;
     }
 }
+
+function edit_upload_types($existing_mimes = array()) {
+
+    $existing_mimes['json'] = 'application/json';
+    $existing_mimes['pdf'] = 'application/pdf';
+    $existing_mimes['txt'] = 'text/plain';
+    $existing_mimes['csv'] = 'text/csv';
+    $existing_mimes['tsv'] = 'text/tab-separated-values';
+    $existing_mimes['xml'] = 'application/xml';
+ 
+    return $existing_mimes;
+}
+add_filter('upload_mimes', 'WPBulgaria\Chatbot\Functions\edit_upload_types');
