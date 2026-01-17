@@ -79,7 +79,7 @@ class ChatAction {
             $code = $e->getCode() ?: 500;
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => $e->getMessage()
+                "message" => esc_html($e->getMessage())
             ], $code);
         }
     }
@@ -112,7 +112,7 @@ class ChatAction {
             $code = $e->getCode() ?: 500;
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => $e->getMessage()
+                "message" => esc_html($e->getMessage())
             ], $code);
         }
     }
@@ -133,7 +133,7 @@ class ChatAction {
             $code = $e->getCode() ?: 500;
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => $e->getMessage()
+                "message" => esc_html($e->getMessage())
             ], $code);
         }
     }
@@ -154,7 +154,7 @@ class ChatAction {
             $code = $e->getCode() ?: 500;
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => $e->getMessage()
+                "message" => esc_html($e->getMessage())
             ], $code);
         }
     }
@@ -175,7 +175,7 @@ class ChatAction {
             $code = $e->getCode() ?: 500;
             return new \WP_REST_Response([
                 "success" => false,
-                "message" => $e->getMessage()
+                "message" => esc_html($e->getMessage())
             ], $code);
         }
     }

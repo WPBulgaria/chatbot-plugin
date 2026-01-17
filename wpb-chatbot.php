@@ -12,7 +12,7 @@ Text Domain: wpbulgaria-chatbot
 
 defined( 'ABSPATH' ) || exit;
 
-define ('_WPB_CHATBOT_UNLOCK_API', $_SERVER["HTTP_HOST"] === "wpstudio.local");
+define ('_WPB_CHATBOT_UNLOCK_API', false);
 
 define("WPB_CHATBOT_VERSION", "0.0.1");
 define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
@@ -28,11 +28,6 @@ require_once(WPB_CHATBOT_DIR.'/app/Api/Api.php');
 require_once(WPB_CHATBOT_DIR.'/hooks/attachments.php');
 
 use WPBulgaria\Chatbot\Models\SearchFileModel;
-add_action('init1', function() {
-    $fileSearchStores = SearchFileModel::listFileSearchStores();
-    var_dump($fileSearchStores);
-    exit();
-});
 
 function wpbulgaria_chatbot_enqueue_styles() {
     wp_enqueue_style('wpbulgaria-chatbot-global', WPB_CHATBOT_URL.'/assets/global.css', array(), WPB_CHATBOT_VERSION, 'all');

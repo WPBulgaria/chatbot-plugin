@@ -1,3 +1,5 @@
+<?php defined('ABSPATH') || exit; ?>
+
 <div id="wp-chatbot-admin-container"></div>
 <script type="module" src="/wp-content/plugins/wpb-chatbot/assets/admin/assets/index-K0gKOwzw.js"></script>
 <script>

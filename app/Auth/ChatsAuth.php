@@ -9,10 +9,16 @@ class ChatsAuth extends BaseAuth {
         parent::__construct($userId);
     }
 
-    public function list(): bool {
+    public function list($userId = 0): bool {
         if ($this->isAdminsOnly()) {
             return user_can($this->userId, 'manage_options');
         }
+
+        if ($userId > 0 && !user_can($userId, 'edit_others_posts') ) {
+            return $userId === $this->userId;
+        }
+
+
         return user_can($this->userId, 'manage_options');
     }
 

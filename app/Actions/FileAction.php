@@ -78,7 +78,7 @@ class FileAction {
             FileUseTransaction::execute($id);
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
-            return new \WP_REST_Response(["success" => false, "message" => $e->getMessage()], $e->getCode() ?: 500);
+            return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $e->getCode() ?: 500);
         }
     }
 }

@@ -6,7 +6,8 @@ defined( 'ABSPATH' ) || exit;
 
 class ConfigsModel {
 
-    const OPTIONS_KEY = "wpb_chatbot_configs";  
+    const OPTIONS_KEY = "wpb_chatbot_configs"; 
+    const KEY_MASK = "🔒"; 
     
     const DEFAULT_CONFIGS = [
         "api_key" => "",
@@ -29,15 +30,23 @@ class ConfigsModel {
             $configs["modifiedAt"] = date(DATE_ATOM);
         }
 
+        if ($doc["apiKey"] === self::KEY_MASK) {
+            $doc["apiKey"] = $configs["apiKey"] ?? "";
+        }
+
         $newDoc = array_merge($configs, $doc);
         update_option(self::OPTIONS_KEY, $newDoc);
         return true;
     }
 
-    public static function view() {
+    public static function view($secure = false) {
         $configs = get_option(self::OPTIONS_KEY, []);
         if (empty($configs)) {
             return self::DEFAULT_CONFIGS;
+        }
+
+        if ($secure) {
+            $configs["apiKey"] = self::KEY_MASK;
         }
 
         return $configs;

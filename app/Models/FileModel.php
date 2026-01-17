@@ -61,6 +61,7 @@ class FileModel {
         require_once(ABSPATH . 'wp-admin/includes/media.php');
         require_once(ABSPATH . 'wp-admin/includes/image.php');
 
+        //The file type is already checked on line 56, so we don't need to test it again
         $upload_overrides = ['test_form' => false, 'test_type' => false];
         $uploaded = wp_handle_upload($file, $upload_overrides);
 
@@ -122,7 +123,6 @@ class FileModel {
         return [
             'id'         => $attachment->ID,
             'url'        => wp_get_attachment_url($attachment->ID),
-            'path'       => $file_path,
             'type'       => $attachment->post_mime_type,
             'name'       => $originalName ?? $attachment->post_title,
             'size'       => file_exists($file_path) ? filesize($file_path) : 0,

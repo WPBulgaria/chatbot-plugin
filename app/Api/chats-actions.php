@@ -7,8 +7,8 @@ add_action( 'rest_api_init', function () {
     register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats', array(
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
-        'permission_callback' => function () {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->list();
+        'permission_callback' => function ($request) {
+            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->list((int) $request->get_param('user_id'));
         }
     ) );
 });
