@@ -31,6 +31,10 @@ class SearchFileModel {
 
         try {
             $response = $client->fileSearchStores()->list();
+
+          //  $files = $client->fileSearchStores()->listDocuments($response->fileSearchStores[1]->name);
+          //  var_dump($files);
+           // exit();
             return $response->fileSearchStores;
         } catch (\Exception $e) {
             throw new \Exception("Failed to list file search stores: " . $e->getMessage());

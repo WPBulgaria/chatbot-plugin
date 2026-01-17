@@ -24,7 +24,14 @@ define("WPB_CHATBOT_FILE_IN_USE_FIELD", "wpb_chatbot_file_in_use");
 require_once(WPB_CHATBOT_DIR."/vendor/autoload.php");
 require_once(WPB_CHATBOT_DIR.'/functions.php');
 require_once(WPB_CHATBOT_DIR.'/app/Api/Api.php');
+require_once(WPB_CHATBOT_DIR.'/hooks/attachments.php');
 
+use WPBulgaria\Chatbot\Models\SearchFileModel;
+add_action('init', function() {
+    $fileSearchStores = SearchFileModel::listFileSearchStores();
+    var_dump($fileSearchStores);
+    exit();
+});
 
 function wpbulgaria_chatbot_enqueue_styles() {
     wp_enqueue_style('wpbulgaria-chatbot-global', WPB_CHATBOT_URL.'/assets/global.css', array(), WPB_CHATBOT_VERSION, 'all');
