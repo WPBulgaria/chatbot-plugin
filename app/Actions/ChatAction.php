@@ -46,6 +46,10 @@ class ChatAction {
     }
 
     static function chat(\WP_REST_Request $request) {
+        if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
+            return new \WP_REST_Response(["success" => false, "message" => "Rate limit exceeded"], 429);
+        }
+
         $params = $request->get_params();
         $body = $request->get_json_params();
 

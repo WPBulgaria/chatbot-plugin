@@ -34,3 +34,16 @@ function edit_upload_types($existing_mimes = array()) {
     return $existing_mimes;
 }
 add_filter('upload_mimes', 'WPBulgaria\Chatbot\Functions\edit_upload_types');
+
+
+function user_rate_limit_exceeded(): bool {
+    $rate_key = 'wpb_chat_rate_' . md5(get_current_user_id());
+    $rate_count = get_transient($rate_key) ?: 0;
+
+    if ($rate_count >= 10) { // 10 requests per minute
+        return true;
+    }
+
+    set_transient($rate_key, $rate_count + 1, 60);
+    return false;
+}
