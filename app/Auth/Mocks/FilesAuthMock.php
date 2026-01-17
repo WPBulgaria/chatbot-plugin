@@ -23,4 +23,8 @@ class FilesAuthMock extends BaseAuth {
     public function remove(string $id): bool {
         return true;
     }
+
+    public function use(string $id): bool {
+        return true;
+    }
 }

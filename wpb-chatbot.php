@@ -19,6 +19,7 @@ define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
 define ('WPB_CHATBOT_DIR',__DIR__);
 define("WPB_CHATBOT_SEARCH_DELIMITER", "{!--!}");
 define("WPB_CHATBOT_API_PREFIX", 'wpb-chatbot/v1');
+define("WPB_CHATBOT_FILE_IN_USE_FIELD", "wpb_chatbot_file_in_use");
 
 require_once(WPB_CHATBOT_DIR."/vendor/autoload.php");
 require_once(WPB_CHATBOT_DIR.'/functions.php');

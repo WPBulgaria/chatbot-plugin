@@ -12,6 +12,7 @@ class ConfigsValidator extends BaseValidator {
     function __construct() {
         $this->rules = [
             "apiKey" => fn($data) => !$data || is_string($data),
+            "fileSearchStore" => fn($data) => is_string($data) && preg_match('/^[-a-z0-9]+$/', $data),
             "totalChats" => fn($data) => !$data || is_int($data),
             "totalQuestions" => fn($data) => !$data || is_int($data),
             "adminsOnly" => fn($data) => $data === null || is_bool($data),

@@ -21,4 +21,7 @@ class FilesAuth extends BaseAuth {
     public function remove(string $id): bool {
         return user_can($this->userId, 'manage_options');
     }
+    public function use(string $id): bool {
+        return user_can($this->userId, 'manage_options');
+    }
 }

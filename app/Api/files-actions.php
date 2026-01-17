@@ -31,3 +31,13 @@ add_action( 'rest_api_init', function () {
         }
     ) );
 });
+
+add_action( 'rest_api_init', function () {
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/files/(?P<id>.+)/use', array(
+        'methods' => 'POST',
+        'callback' => 'WPBulgaria\Chatbot\Actions\FileAction::use',
+        'permission_callback' => function ($request) {
+            return  \WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::create(get_current_user_id())->use($request->get_param('id'));
+        }
+    ) );
+});
