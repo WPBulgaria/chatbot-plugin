@@ -23,11 +23,12 @@ define("WPB_CHATBOT_FILE_IN_USE_FIELD", "wpb_chatbot_file_in_use");
 
 require_once(WPB_CHATBOT_DIR."/vendor/autoload.php");
 require_once(WPB_CHATBOT_DIR.'/functions.php');
+require_once(WPB_CHATBOT_DIR.'/post-types/chat.php');
 require_once(WPB_CHATBOT_DIR.'/app/Api/Api.php');
 require_once(WPB_CHATBOT_DIR.'/hooks/attachments.php');
 
 use WPBulgaria\Chatbot\Models\SearchFileModel;
-add_action('init', function() {
+add_action('init1', function() {
     $fileSearchStores = SearchFileModel::listFileSearchStores();
     var_dump($fileSearchStores);
     exit();

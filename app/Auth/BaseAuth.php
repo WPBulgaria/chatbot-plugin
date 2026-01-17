@@ -2,6 +2,8 @@
 
 namespace WPBulgaria\Chatbot\Auth;
 
+use WPBulgaria\Chatbot\Models\ConfigsModel;
+
 defined( 'ABSPATH' ) || exit;
 
 class BaseAuth {
@@ -16,5 +18,10 @@ class BaseAuth {
     
     public static function getInstance($userId) {
         return new static($userId);
+    }
+
+    public function isAdminsOnly(): bool {
+        $configs = ConfigsModel::view();
+        return !!$configs["adminsOnly"];
     }
 }

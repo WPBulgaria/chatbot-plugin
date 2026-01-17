@@ -17,6 +17,7 @@ class ConfigsModel {
         "defaultPlan" => "",
         "createdAt" => "",
         "modifiedAt" => "",
+        "systemInstruction" => "",
     ];
 
     public static function store(array $doc) {

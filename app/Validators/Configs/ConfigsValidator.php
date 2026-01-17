@@ -20,6 +20,7 @@ class ConfigsValidator extends BaseValidator {
             "defaultPlan" => fn($data) => !$data || Uuid::isValid($data),
             "createdAt" => fn($data) => !$data || validateDate($data),
             "modifiedAt" => fn($data) => !$data || validateDate($data),
+            "systemInstructions" => fn($data) => !$data || is_string($data),
 
         ];
     }
