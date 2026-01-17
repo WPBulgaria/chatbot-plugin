@@ -27,10 +27,6 @@ class PlanValidator extends BaseValidator {
 
     function isValid($data): bool
     {
-        if (empty($data)) {
-            return true;
-        }
-
         if (!is_array($data)) {
             $this->errors["action"] = "Invalid document";
             return false;

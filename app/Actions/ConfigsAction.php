@@ -11,7 +11,7 @@ class ConfigsAction {
 
     static function view() {
         try {
-            $configs = ConfigsModel::view();
+            $configs = ConfigsModel::view(true);
             return new \WP_REST_Response($configs, 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], 500);

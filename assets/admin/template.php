@@ -1,7 +1,7 @@
 <?php defined('ABSPATH') || exit; ?>
 
 <div id="wp-chatbot-admin-container"></div>
-<script type="module" src="/wp-content/plugins/wpb-chatbot/assets/admin/assets/index-K0gKOwzw.js"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . 'assets/admin/assets/index-K0gKOwzw.js'); ?>"></script>
 <script>
     jQuery(document).ready(function($) {
         $("#wp-chatbot-admin-container").on("keyup", function(event) {
