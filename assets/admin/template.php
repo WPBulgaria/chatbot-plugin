@@ -1,8 +1,16 @@
-<?php defined('ABSPATH') || exit; ?>
+<?php
+defined('ABSPATH') || exit;
+$plugin_url = plugin_dir_url(dirname(__DIR__));
+?>
 
 <div id="wp-chatbot-admin-container"></div>
-<script type="module" src="<?php echo esc_url($plugin_url . 'assets/admin/assets/index-K0gKOwzw.js'); ?>"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-Xw5HNufD.js", ); ?>"></script>
 <script>
+    window.wpbChatbotConfig = {
+        root: "<?php echo esc_url_raw( rest_url() ); ?>",
+        nonce: "<?php echo wp_create_nonce( 'wp_rest' ); ?>"
+    };
+
     jQuery(document).ready(function($) {
         $("#wp-chatbot-admin-container").on("keyup", function(event) {
             event.stopPropagation();
@@ -21,7 +29,7 @@
 
         let bodyLink = document.createElement("link");
         bodyLink.setAttribute("rel", "stylesheet");
-        bodyLink.setAttribute("href", "/wp-content/plugins/wpb-chatbot/assets/admin/assets/index-DA3Sk57J.css");
+        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/admin/assets/index-YQczj20e.css"); ?>');
         document.body.prepend(bodyLink);
 
         /**
