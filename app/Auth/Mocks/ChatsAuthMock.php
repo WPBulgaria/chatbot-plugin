@@ -22,6 +22,10 @@ class ChatsAuthMock extends BaseAuth {
     public function chat($id = null): bool {
         return true;
     }
+    
+    public function stream($id = null): bool {
+        return true;
+    }
 
     public function updateTitle($id): bool {
         return true;

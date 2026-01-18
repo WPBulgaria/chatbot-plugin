@@ -36,6 +36,14 @@ class ChatsAuth extends BaseAuth {
         return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
     }
 
+    public function stream($id = null): bool {
+        if ($this->isAdminsOnly()) {
+            return current_user_can('manage_options');
+        }
+        return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
+    }
+
+
     public function updateTitle($id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');

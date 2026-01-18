@@ -183,4 +183,61 @@ class ChatAction {
             ], $code);
         }
     }
+
+
+    static function stream(\WP_REST_Request $request) {
+
+        // These must be set before any output is sent
+        header('Content-Type: text/event-stream');
+        header('Cache-Control: no-cache');
+        header('Connection: keep-alive');
+        header('X-Accel-Buffering: no'); // Nginx specific: disables buffering
+        // This ensures the client knows it's an SSE response
+        header('X-SSE: 1');
+
+        if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
+            // Handle API errors (e.g., send a specialized error event)
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => "Rate limit exceeded", "code" => 429]) . "\n\n";
+            flush();
+            exit();
+        }
+
+        $params = $request->get_params();
+        $body = $request->get_json_params();
+
+        $message = $body['message'] ?? '';
+        $chatId = isset($params['id']) ? absint($params['id']) : null;
+
+        $validator = ChatValidator::make();
+
+        if (!$validator->validateMessage($message)) {
+            // Handle API errors (e.g., send a specialized error event)
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => $validator->getErrors(), "code" => 400]) . "\n\n";
+            flush();
+            exit();
+        }
+
+        if ($chatId && !$validator->validateChatId($chatId)) {
+            // Handle API errors (e.g., send a specialized error event)
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => $validator->getErrors(), "code" => 400]) . "\n\n";
+            flush();
+            exit();
+        }
+
+        try {
+            ChatModel::stream($message, $chatId);
+        } catch (\Exception $e) {
+            $code = $e->getCode() ?: 500;
+            // Handle API errors (e.g., send a specialized error event)
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => $e->getMessage(), "code" => $code]) . "\n\n";
+            flush();
+        }
+
+        // Kill WP execution to prevent standard footer/JSON returns
+        exit();
+    }
 }

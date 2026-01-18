@@ -7,6 +7,7 @@ use Gemini\Data\Content;
 use Gemini\Enums\Role;
 use Gemini\Data\FileSearch;
 use Gemini\Data\Tool;
+use Gemini\Data\GenerationConfig;
 use WPBulgaria\Chatbot\Models\SearchFileModel;
 
 defined( 'ABSPATH' ) || exit;
@@ -71,6 +72,126 @@ class ChatModel {
 
         return SearchFileModel::getFileSearchStore($configs["fileSearchStore"]);
     }
+
+
+    public static function stream(string $message, ?int $chatId = null, ?int $userId = null): array {
+        $client = self::getClient();
+        if (!$client) {
+            throw new \Exception("API key not configured", 400);
+        }
+
+        $userId = $userId ?? get_current_user_id();
+        $isNewChat = empty($chatId);
+        $chat = $isNewChat ? null : self::get($chatId);
+
+        if (!$isNewChat && !$chat) {
+            throw new \Exception("Chat not found", 404);
+        }
+
+        $messages = $isNewChat ? [] : $chat['messages'];
+
+        if ($isNewChat) {
+            $title = self::generateTitle($message);
+            $chatId = self::create($title, $messages, $userId);
+        } 
+
+        $messages[] = [
+            'role'      => 'user',
+            'content'   => $message,
+            'createdAt' => date(DATE_ATOM),
+        ];
+
+        $history = self::buildGeminiHistory($messages);
+
+        try {
+            $configs = ConfigsModel::view();
+            $model = $configs["model"] ?? "gemini-2.5-flash";
+            
+            $model = $client->generativeModel($model);
+
+            $generateConfig = new GenerationConfig(
+                temperature: 0.0, 
+                maxOutputTokens: 4096, 
+                topP: 1, 
+                topK: 40,
+                stopSequences: []
+            );
+
+            $model->withGenerationConfig($generateConfig);
+
+            if (!empty($configs["systemInstructions"])) {
+                $model->withSystemInstruction(Content::parse(part: $configs["systemInstructions"]));
+            }
+
+           
+
+            try {
+                $fileSearchStore = self::getFileSearchStore();
+
+                if ($fileSearchStore) {
+                $model->withTool(new Tool(
+                        fileSearch: new FileSearch(fileSearchStoreNames: [$fileSearchStore]),
+                    ));
+                }
+            } catch (\Exception $e) {
+                error_log("Failed to add file search store to model: " . $e->getMessage());
+            }
+     
+
+            $stream = $model->startChat(history: $history)->streamSendMessage($message);
+
+            // Close the session to prevent blocking
+            session_write_close();
+            $responseText = '';
+            foreach ($stream as $chunk) {
+                // Extract text from this specific chunk
+                $chunkText = '';
+
+                // Check if there are candidates and parts before trying to read them
+                if ($chunk->candidates && count($chunk->candidates) > 0) {
+                    foreach ($chunk->parts() as $part) {
+                        // Only append if it is actually a TextPart
+                        if (!empty($part->text)) {
+                            $chunkText .= $part->text;
+                        }
+                    }
+                }
+                
+                // If the chunk is empty, skip it to avoid confusing the client
+                if (empty($chunkText)) {
+                    continue;
+                }
+
+                // We format this as a Server-Sent Event (SSE) data line.
+                // Sending JSON ensures safely escaping newlines/quotes.
+                $payload = json_encode(['success' => true, 'message' => $chunkText, 'chatId' => $chatId, 'isNew' => $isNewChat, 'title' => $title], JSON_UNESCAPED_UNICODE);
+                
+                echo "data: " . $payload . "\n\n";
+
+                // FLUSH BUFFER IMMEDIATELY
+                // This forces PHP to send the data to the browser right now
+                if (ob_get_level() > 0) {
+                    ob_end_flush();
+                }
+                flush();
+            }
+
+            
+
+            $messages[] = [
+                'role'      => 'model',
+                'content'   => $responseText,
+                'createdAt' => date(DATE_ATOM),
+            ];
+
+            
+            self::updateMessages($chatId, $messages);
+            return [];
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to get AI response: " . $e->getMessage(), 500);
+        }
+    }
+
 
     public static function chat(string $message, ?int $chatId = null, ?int $userId = null): array {
         $client = self::getClient();

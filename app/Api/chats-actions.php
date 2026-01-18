@@ -89,3 +89,26 @@ add_action( 'rest_api_init', function () {
         }
     ) );
 });
+
+
+// POST /chats/stream - Create new chat and stream the response
+add_action( 'rest_api_init', function () {
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/stream', array(
+        'methods' => 'POST',
+        'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
+        'permission_callback' => function ($request) {
+            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->stream($request->get_param('id'));
+        }
+    ) );
+});
+
+// POST /chats/{id}/stream - Continue existing chat and stream the response
+add_action( 'rest_api_init', function () {
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/(?P<id>\d+)/stream', array(
+        'methods' => 'POST',
+        'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
+        'permission_callback' => function ($request) {
+            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->stream($request->get_param('id'));
+        }
+    ) );
+});

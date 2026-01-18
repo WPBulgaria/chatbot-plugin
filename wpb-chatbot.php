@@ -12,7 +12,7 @@ Text Domain: wpbulgaria-chatbot
 
 defined( 'ABSPATH' ) || exit;
 
-define ('_WPB_CHATBOT_UNLOCK_API', false);
+define ('_WPB_CHATBOT_UNLOCK_API', true);
 
 define("WPB_CHATBOT_VERSION", "0.0.1");
 define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
