@@ -36,8 +36,10 @@ class ChatModel {
             'order'          => 'DESC',
         ];
 
-        if ($userId > 0) {
+        if ($userId > 0 && current_user_can('edit_others_posts')) {
             $args['author'] = $userId;
+        } else if(!current_user_can('edit_others_posts')) {
+            $args['author'] = get_current_user_id();
         }
 
         $query = new \WP_Query($args);
@@ -102,6 +104,7 @@ class ChatModel {
         ];
 
         $history = self::buildGeminiHistory($messages);
+        $responseText = '';
 
         try {
             $configs = ConfigsModel::view();
@@ -110,11 +113,11 @@ class ChatModel {
             $model = $client->generativeModel($model);
 
             $generateConfig = new GenerationConfig(
-                temperature: 0.0, 
-                maxOutputTokens: 4096, 
-                topP: 1, 
-                topK: 40,
-                stopSequences: []
+                temperature: 0.1,       // Keep low (0.0 - 0.2) for strict adherence to facts in files.
+                maxOutputTokens: 800,   // 4096 is overkill and risky. 800 covers ~350 words, plenty for your limit.
+                topP: 0.8,              // Lowering slightly reduces "creative" padding words.
+                topK: 20,               // Forces the model to pick the most likely words faster (more direct).
+                stopSequences: [],
             );
 
             $model->withGenerationConfig($generateConfig);
@@ -153,6 +156,7 @@ class ChatModel {
                         // Only append if it is actually a TextPart
                         if (!empty($part->text)) {
                             $chunkText .= $part->text;
+                            $responseText .= $part->text;
                         }
                     }
                 }

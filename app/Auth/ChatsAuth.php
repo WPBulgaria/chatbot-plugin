@@ -14,7 +14,7 @@ class ChatsAuth extends BaseAuth {
             return current_user_can('manage_options');
         }
 
-        if ($userId > 0 && !current_user_can('edit_others_posts') ) {
+        if (!empty($userId) && $userId > 0 && !current_user_can('edit_others_posts') ) {
             return $userId === $this->userId;
         }
 

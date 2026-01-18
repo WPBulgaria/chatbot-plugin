@@ -12,7 +12,7 @@ Text Domain: wpbulgaria-chatbot
 
 defined( 'ABSPATH' ) || exit;
 
-define ('_WPB_CHATBOT_UNLOCK_API', true);
+define ('_WPB_CHATBOT_UNLOCK_API', false);
 
 define("WPB_CHATBOT_VERSION", "0.0.1");
 define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
@@ -47,6 +47,20 @@ add_action("admin_menu", function() {
         "wpbulgaria-chatbot",
         "wpbulgaria_chatbot_admin_include_app");
 });
+
+
+function wpbulgaria_chatbot_shortcode($atts = array(), $content = null) {
+    ob_start();
+    $template_file = WPB_CHATBOT_DIR . '/assets/chat/template.php';
+    if ( file_exists($template_file) ) {
+        include $template_file;
+    } else {
+        echo esc_html__('Chatbot template not found.', 'wpbulgaria-chatbot');
+    }
+    return ob_get_clean();
+}
+add_shortcode('wpbulgaria_chatbot', 'wpbulgaria_chatbot_shortcode');
+
 
 
 register_activation_hook( __FILE__, 'wpbulgaria_chatbot_install' );
