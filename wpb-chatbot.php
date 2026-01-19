@@ -87,9 +87,7 @@ add_action('admin_menu', function (): void {
  */
 function wpbulgaria_chatbot_shortcode(array $atts = [], ?string $content = null): string {
     $configs = wpb_chatbot_resolve(ConfigsModel::class)->view(true);
-    $chatTheme = isset($configs["chatTheme"]) && is_array($configs["chatTheme"])
-        ? json_encode($configs["chatTheme"], JSON_UNESCAPED_UNICODE)
-        : "null";
+    $chatTheme = isset($configs["chatTheme"]) && is_array($configs["chatTheme"]) ? : "null";
 
     ob_start();
     $template_file = WPB_CHATBOT_DIR . '/assets/chat/template.php';

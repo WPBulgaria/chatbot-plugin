@@ -9,8 +9,8 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
     
     window.wpbChatbotConfig = {
             root: "<?php echo esc_url_raw( rest_url() ); ?>",
-            nonce: "<?php echo wp_create_nonce( 'wp_rest' ); ?>",
-            chatTheme: "<?php echo esc_js($chatTheme); ?>"
+            nonce: "<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>",
+            chatTheme: <?php echo wp_json_encode($configs["chatTheme"] ?? null); ?>
         };
 
     jQuery(document).ready(function($) {
