@@ -3,13 +3,28 @@
 namespace WPBulgaria\Chatbot\Actions;
 
 use WPBulgaria\Chatbot\Models\ChatModel;
+use WPBulgaria\Chatbot\Services\ChatService;
 use WPBulgaria\Chatbot\Validators\Chat\ChatValidator;
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
+/**
+ * Chat Action - handles chat-related REST API endpoints
+ * Demonstrates both static methods and DI patterns
+ */
 class ChatAction {
 
-    static function list(\WP_REST_Request $request) {
+    /**
+     * Get ChatService from container
+     */
+    protected static function getChatService(): ChatService {
+        return wpb_chatbot_app(ChatService::class);
+    }
+
+    /**
+     * List all chats
+     */
+    public static function list(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $perPage = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
@@ -25,7 +40,10 @@ class ChatAction {
         ], 200);
     }
 
-    static function get(\WP_REST_Request $request) {
+    /**
+     * Get a single chat
+     */
+    public static function get(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $id = isset($params['id']) ? absint($params['id']) : 0;
 
@@ -45,7 +63,10 @@ class ChatAction {
         ], 200);
     }
 
-    static function chat(\WP_REST_Request $request) {
+    /**
+     * Send a chat message (uses DI via ChatService)
+     */
+    public static function chat(\WP_REST_Request $request): \WP_REST_Response {
         if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
             return new \WP_REST_Response(["success" => false, "message" => "Rate limit exceeded"], 429);
         }
@@ -73,11 +94,13 @@ class ChatAction {
         }
 
         try {
-            $result = ChatModel::chat($message, $chatId);
+            // Use ChatService via DI
+            $chatService = self::getChatService();
+            $result = $chatService->sendMessage($message, $chatId);
 
             return new \WP_REST_Response([
-                "success"  => true,
-                "chat"     => $result,
+                "success" => true,
+                "chat"    => $result,
             ], 200);
         } catch (\Exception $e) {
             $code = $e->getCode() ?: 500;
@@ -88,7 +111,10 @@ class ChatAction {
         }
     }
 
-    static function updateTitle(\WP_REST_Request $request) {
+    /**
+     * Update chat title
+     */
+    public static function updateTitle(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $body = $request->get_json_params();
 
@@ -121,7 +147,10 @@ class ChatAction {
         }
     }
 
-    static function trash(\WP_REST_Request $request) {
+    /**
+     * Trash a chat (soft delete)
+     */
+    public static function trash(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $id = isset($params['id']) ? absint($params['id']) : 0;
 
@@ -142,7 +171,10 @@ class ChatAction {
         }
     }
 
-    static function remove(\WP_REST_Request $request) {
+    /**
+     * Remove a chat (hard delete)
+     */
+    public static function remove(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $id = isset($params['id']) ? absint($params['id']) : 0;
 
@@ -163,7 +195,10 @@ class ChatAction {
         }
     }
 
-    static function restore(\WP_REST_Request $request) {
+    /**
+     * Restore a trashed chat
+     */
+    public static function restore(\WP_REST_Request $request): \WP_REST_Response {
         $params = $request->get_params();
         $id = isset($params['id']) ? absint($params['id']) : 0;
 
@@ -184,19 +219,18 @@ class ChatAction {
         }
     }
 
-
-    static function stream(\WP_REST_Request $request) {
-
-        // These must be set before any output is sent
+    /**
+     * Stream chat response via SSE (uses DI via ChatService)
+     */
+    public static function stream(\WP_REST_Request $request): void {
+        // Set SSE headers
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
-        header('X-Accel-Buffering: no'); // Nginx specific: disables buffering
-        // This ensures the client knows it's an SSE response
+        header('X-Accel-Buffering: no');
         header('X-SSE: 1');
 
         if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
-            // Handle API errors (e.g., send a specialized error event)
             echo "event: error\n";
             echo "data: " . json_encode(['success' => false, 'message' => "Rate limit exceeded", "code" => 429]) . "\n\n";
             flush();
@@ -228,10 +262,11 @@ class ChatAction {
         }
 
         try {
-            ChatModel::stream($message, $chatId);
+            // Use ChatService via DI
+            $chatService = self::getChatService();
+            $chatService->streamMessage($message, $chatId);
         } catch (\Exception $e) {
             $code = $e->getCode() ?: 500;
-            // Handle API errors (e.g., send a specialized error event)
             echo "event: error\n";
             echo "data: " . json_encode(['success' => false, 'message' => $e->getMessage(), "code" => $code]) . "\n\n";
             flush();

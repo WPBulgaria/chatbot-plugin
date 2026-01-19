@@ -3,13 +3,24 @@
 namespace WPBulgaria\Chatbot\Models;
 
 use WPBulgaria\Chatbot\Services\GeminiService;
+use WPBulgaria\Chatbot\Contracts\AuthInterface;
 
 defined('ABSPATH') || exit;
 
-class ChatModel {
+class ChatModel extends BaseModel {
 
     const POST_TYPE = 'wpb_chat';
     const META_MESSAGES = '_wpb_chat_messages';
+    protected GeminiService $geminiService;
+    protected PostModel $postModel;
+    protected AuthInterface $auth;
+
+    public function __construct(GeminiService $geminiService, PostModel $postModel, AuthInterface $auth) {
+        parent::__construct();
+        $this->geminiService = $geminiService;
+        $this->postModel = $postModel;
+        $this->auth = $auth;
+    }
 
     /**
      * Prepare chat context for sending messages
@@ -17,16 +28,14 @@ class ChatModel {
      * 
      * @return array{geminiService: GeminiService, userId: int, isNewChat: bool, chat: array|null, messages: array}
      */
-    protected static function prepareChat(?int $chatId, ?int $userId = null): array {
-        $geminiService = new GeminiService();
-
-        if (!$geminiService->isConfigured()) {
+    protected function prepareChat(?int $chatId, ?int $userId = null): array {
+        if (!$this->geminiService->isConfigured()) {
             throw new \Exception("API key not configured", 400);
         }
 
-        $userId = $userId ?? get_current_user_id();
+        $userId = $userId ?? $this->auth->currentUserId();
         $isNewChat = empty($chatId);
-        $chat = $isNewChat ? null : self::get($chatId);
+        $chat = $isNewChat ? null : $this->get($chatId);
 
         if (!$isNewChat && !$chat) {
             throw new \Exception("Chat not found", 404);
@@ -35,7 +44,7 @@ class ChatModel {
         $messages = $isNewChat ? [] : ($chat['messages'] ?? []);
 
         return [
-            'geminiService' => $geminiService,
+            'geminiService' => $this->geminiService,
             'userId'        => $userId,
             'isNewChat'     => $isNewChat,
             'chat'          => $chat,
@@ -46,21 +55,21 @@ class ChatModel {
     /**
      * Add user message to messages array
      */
-    protected static function addUserMessage(array &$messages, string $message): void {
-        $messages[] = GeminiService::createMessage('user', $message);
+    protected function addUserMessage(array &$messages, string $message): void {
+        $messages[] = $this->geminiService->createMessage('user', $message);
     }
 
     /**
      * Add model response to messages array
      */
-    protected static function addModelMessage(array &$messages, string $response): void {
-        $messages[] = GeminiService::createMessage('model', $response);
+    protected function addModelMessage(array &$messages, string $response): void {
+        $messages[] = $this->geminiService->createMessage('model', $response);
     }
 
     /**
      * List chats with pagination
      */
-    public static function list(int $userId = 0, int $perPage = 20, int $page = 1): array {
+    public function list(int $userId = 0, int $perPage = 20, int $page = 1): array {
         $args = [
             'post_type'      => self::POST_TYPE,
             'post_status'    => 'publish',
@@ -70,17 +79,17 @@ class ChatModel {
             'order'          => 'DESC',
         ];
 
-        if ($userId > 0 && current_user_can('edit_others_posts')) {
+        if ($userId > 0 && $this->auth->currentUserCan('edit_others_posts')) {
             $args['author'] = $userId;
-        } else if (!current_user_can('edit_others_posts')) {
-            $args['author'] = get_current_user_id();
+        } else if (!$this->auth->currentUserCan('edit_others_posts')) {
+            $args['author'] = $this->auth->currentUserId();
         }
 
         $query = new \WP_Query($args);
         $chats = [];
 
         foreach ($query->posts as $post) {
-            $chats[] = self::formatChat($post);
+            $chats[] = $this->formatChat($post);
         }
 
         return [
@@ -93,21 +102,21 @@ class ChatModel {
     /**
      * Get a single chat by ID
      */
-    public static function get(int $id): ?array {
+    public function get(int $id): ?array {
         $post = get_post($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE || $post->post_status === 'trash') {
             return null;
         }
 
-        return self::formatChat($post, true);
+        return $this->formatChat($post, true);
     }
 
     /**
      * Stream chat response via SSE
      */
-    public static function stream(string $message, ?int $chatId = null, ?int $userId = null): array {
-        $context = self::prepareChat($chatId, $userId);
+    public function stream(string $message, ?int $chatId = null, ?int $userId = null): array {
+        $context = $this->prepareChat($chatId, $userId);
 
         /** @var GeminiService $geminiService */
         $geminiService = $context['geminiService'];
@@ -124,11 +133,11 @@ class ChatModel {
         $title = '';
         $streamChatId = $chatId;
         if ($isNewChat) {
-            $title = self::generateTitle($message);
-            $streamChatId = self::create($title, $messages, $contextUserId);
+            $title = $this->generateTitle($message);
+            $streamChatId = $this->create($title, $messages, $contextUserId);
         }
 
-        self::addUserMessage($messages, $message);
+        $this->addUserMessage($messages, $message);
         $history = $geminiService->buildHistory($messages);
 
         try {
@@ -153,8 +162,8 @@ class ChatModel {
                 }
             );
 
-            self::addModelMessage($messages, $responseText);
-            self::updateMessages($streamChatId, $messages);
+            $this->addModelMessage($messages, $responseText);
+            $this->updateMessages($streamChatId, $messages);
 
             return [];
         } catch (\Exception $e) {
@@ -165,8 +174,8 @@ class ChatModel {
     /**
      * Send chat message and get response
      */
-    public static function chat(string $message, ?int $chatId = null, ?int $userId = null): array {
-        $context = self::prepareChat($chatId, $userId);
+    public function chat(string $message, ?int $chatId = null, ?int $userId = null): array {
+        $context = $this->prepareChat($chatId, $userId);
 
         /** @var GeminiService $geminiService */
         $geminiService = $context['geminiService'];
@@ -179,21 +188,21 @@ class ChatModel {
         /** @var array $messages */
         $messages = $context['messages'];
 
-        self::addUserMessage($messages, $message);
+        $this->addUserMessage($messages, $message);
         $history = $geminiService->buildHistory($messages);
 
         try {
             $responseText = $geminiService->sendMessage($message, $history);
 
-            self::addModelMessage($messages, $responseText);
+            $this->addModelMessage($messages, $responseText);
 
             $title = '';
             $resultChatId = $chatId;
             if ($isNewChat) {
-                $title = self::generateTitle($message);
-                $resultChatId = self::create($title, $messages, $contextUserId);
+                $title = $this->generateTitle($message);
+                $resultChatId = $this->create($title, $messages, $contextUserId);
             } else {
-                self::updateMessages($chatId, $messages);
+                $this->updateMessages($chatId, $messages);
                 $title = $chat['title'] ?? '';
             }
 
@@ -211,10 +220,10 @@ class ChatModel {
     /**
      * Create a new chat
      */
-    public static function create(string $title, array $messages = [], int $userId = 0): int {
-        $userId = $userId ?: get_current_user_id();
+    public function create(string $title, array $messages = [], int $userId = 0): int {
+        $userId = $userId ?: $this->auth->currentUserId();
 
-        $postId = wp_insert_post([
+        $postId = $this->postModel->insert([
             'post_type'   => self::POST_TYPE,
             'post_title'  => sanitize_text_field($title),
             'post_status' => 'publish',
@@ -225,7 +234,7 @@ class ChatModel {
             throw new \Exception("Failed to create chat: " . $postId->get_error_message(), 500);
         }
 
-        update_post_meta($postId, self::META_MESSAGES, $messages);
+        $this->postModel->updateMeta($postId, self::META_MESSAGES, $messages);
 
         return $postId;
     }
@@ -233,16 +242,16 @@ class ChatModel {
     /**
      * Update chat messages
      */
-    public static function updateMessages(int $id, array $messages): bool {
+    public function updateMessages(int $id, array $messages): bool {
         $post = get_post($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
-        update_post_meta($id, self::META_MESSAGES, $messages);
+        $this->postModel->updateMeta($id, self::META_MESSAGES, $messages);
 
-        wp_update_post([
+        $this->postModel->update([
             'ID'                => $id,
             'post_modified'     => current_time('mysql'),
             'post_modified_gmt' => current_time('mysql', true),
@@ -254,14 +263,14 @@ class ChatModel {
     /**
      * Update chat title
      */
-    public static function updateTitle(int $id, string $title): bool {
+    public function updateTitle(int $id, string $title): bool {
         $post = get_post($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
-        $result = wp_update_post([
+        $result = $this->postModel->update([
             'ID'         => $id,
             'post_title' => sanitize_text_field($title),
         ], true);
@@ -276,14 +285,14 @@ class ChatModel {
     /**
      * Trash a chat (soft delete)
      */
-    public static function trash(int $id): bool {
-        $post = get_post($id);
+    public function trash(int $id): bool {
+        $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
-        $result = wp_trash_post($id);
+        $result = $this->postModel->trash($id);
 
         if (!$result) {
             throw new \Exception("Failed to trash chat", 500);
@@ -295,14 +304,14 @@ class ChatModel {
     /**
      * Permanently delete a chat
      */
-    public static function remove(int $id): bool {
-        $post = get_post($id);
+    public function remove(int $id): bool {
+        $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
-        $result = wp_delete_post($id, true);
+        $result = $this->postModel->delete($id);
 
         if (!$result) {
             throw new \Exception("Failed to delete chat", 500);
@@ -314,14 +323,14 @@ class ChatModel {
     /**
      * Restore a trashed chat
      */
-    public static function restore(int $id): bool {
-        $post = get_post($id);
+    public function restore(int $id): bool {
+        $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
-        $result = wp_untrash_post($id);
+        $result = $this->postModel->untrash($id);
 
         if (!$result) {
             throw new \Exception("Failed to restore chat", 500);
@@ -333,8 +342,8 @@ class ChatModel {
     /**
      * Format chat post for API response
      */
-    private static function formatChat(\WP_Post $post, bool $includeMessages = false): array {
-        $messages = get_post_meta($post->ID, self::META_MESSAGES, true);
+    private function formatChat(\WP_Post $post, bool $includeMessages = false): array {
+        $messages = $this->postModel->getMeta($post->ID, self::META_MESSAGES);
 
         if (!is_array($messages) && is_string($messages)) {
             $messages = json_decode($messages, true, JSON_UNESCAPED_UNICODE);

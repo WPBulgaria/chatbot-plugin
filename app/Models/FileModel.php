@@ -16,7 +16,7 @@ class FileModel {
     ];
     const MAX_FILE_SIZE = 10485760; // 10MB
 
-    public static function list(int $per_page = 20, int $page = 1): array {
+    public function list(int $per_page = 20, int $page = 1): array {
         $args = [
             'post_type'      => 'attachment',
             'post_status'    => 'inherit',
@@ -41,7 +41,7 @@ class FileModel {
         ];
     }
 
-    public static function upload(array $file): array {
+    public function upload(array $file): array {
         $allowed_types_values = array_values(self::ALLOWED_TYPES);
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -90,7 +90,7 @@ class FileModel {
         return self::formatAttachment($attachment, $file['name']);
     }
 
-    public static function remove(int $id): bool {
+    public function remove(int $id): bool {
         $attachment = get_post($id);
 
         if (!$attachment || $attachment->post_type !== 'attachment') {
@@ -106,7 +106,7 @@ class FileModel {
         return true;
     }
 
-    public static function get(int $id): ?array {
+    public function get(int $id): ?array {
         $attachment = get_post($id);
 
         if (!$attachment || $attachment->post_type !== 'attachment') {
@@ -116,7 +116,7 @@ class FileModel {
         return self::formatAttachment($attachment);
     }
 
-    private static function formatAttachment(\WP_Post $attachment, ?string $originalName = null): array {
+    private function formatAttachment(\WP_Post $attachment, ?string $originalName = null): array {
         $file_path = get_attached_file($attachment->ID);
         
         return [

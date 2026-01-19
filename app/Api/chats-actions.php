@@ -8,7 +8,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->list((int) $request->get_param('user_id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->list((int) $request->get_param('user_id'));
         }
     ) );
 });
@@ -19,7 +19,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::get',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->get($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->get($request->get_param('id'));
         }
     ) );
 });
@@ -30,7 +30,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
         'permission_callback' => function () {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->chat();
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->chat();
         }
     ) );
 });
@@ -41,7 +41,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->chat($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->chat($request->get_param('id'));
         }
     ) );
 });
@@ -52,7 +52,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'PUT',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::updateTitle',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->updateTitle($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->updateTitle($request->get_param('id'));
         }
     ) );
 });
@@ -63,7 +63,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::trash',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->trash($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->trash($request->get_param('id'));
         }
     ) );
 });
@@ -74,7 +74,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::remove',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->remove($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->remove($request->get_param('id'));
         }
     ) );
 });
@@ -85,7 +85,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::restore',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->restore($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->restore($request->get_param('id'));
         }
     ) );
 });
@@ -97,7 +97,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->stream($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->stream();
         }
     ) );
 });
@@ -108,7 +108,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
-            return \WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::create(get_current_user_id())->stream($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->stream($request->get_param('id'));
         }
     ) );
 });

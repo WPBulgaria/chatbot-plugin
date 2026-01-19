@@ -13,29 +13,47 @@ use WPBulgaria\Chatbot\Models\SearchFileModel;
 
 defined('ABSPATH') || exit;
 
+/**
+ * Gemini API Service - handles all Gemini API interactions
+ */
 class GeminiService {
 
-    protected $client;
-    protected $configs;
-    protected $model;
+    private ?object $client = null;
+    private ConfigsModel $configsModel;
+    private ?array $configs = null;
 
-    public function __construct() {
-        $this->configs = ConfigsModel::view();
+    /**
+     * Constructor with dependency injection
+     */
+    public function __construct(ConfigsModel $configsModel) {
+        $this->configsModel = $configsModel;
+    }
+
+    /**
+     * Get configs (lazy loaded)
+     */
+    protected function getConfigs(): array {
+        if ($this->configs === null) {
+            $this->configs = $this->configsModel->view();
+        }
+        return $this->configs;
     }
 
     /**
      * Get or create the Gemini client
      */
-    public function getClient() {
-        if ($this->client) {
+    public function getClient(): object|false {
+        if ($this->client !== null) {
             return $this->client;
         }
 
-        if (empty($this->configs["apiKey"])) {
+        $configs = $this->getConfigs();
+
+        if (empty($configs["apiKey"])) {
             return false;
         }
 
-        $this->client = Gemini::client($this->configs["apiKey"]);
+        $this->client = Gemini::client($configs["apiKey"]);
         return $this->client;
     }
 
@@ -43,43 +61,75 @@ class GeminiService {
      * Check if the service is configured
      */
     public function isConfigured(): bool {
-        return !empty($this->configs["apiKey"]);
+        $configs = $this->getConfigs();
+        return !empty($configs["apiKey"]);
     }
 
     /**
      * Get the configured model name
      */
     public function getModelName(): string {
-        return $this->configs["model"] ?? "gemini-2.5-flash";
+        $configs = $this->getConfigs();
+        return $configs["model"] ?? "gemini-2.5-flash";
     }
 
     /**
      * Get system instructions from config
      */
     public function getSystemInstructions(): ?string {
-        return $this->configs["systemInstructions"] ?? null;
+        $configs = $this->getConfigs();
+        return $configs["systemInstructions"] ?? null;
+    }
+
+    public function listFileSearchStores(): array {
+        $client = $this->getClient();
+        if (!$this->isConfigured() || !$client) {
+            throw new \Exception("Gemini client not found");    
+        }
+
+        try {
+            $response = $client->fileSearchStores()->list();
+
+          //  $files = $client->fileSearchStores()->listDocuments($response->fileSearchStores[1]->name);
+          //  var_dump($files);
+           // exit();
+            return $response->fileSearchStores;
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to list file search stores: " . $e->getMessage());
+        }
     }
 
     /**
      * Get file search store name from config
      */
-    protected function getFileSearchStore(): ?string {
-        if (empty($this->configs["fileSearchStore"])) {
-            return null;
+    public function getFileSearchStore(string $name): ?string {
+        $client = $this->getClient();
+        if (!$client || empty($name)) {
+            throw new \Exception("Gemini client not found");
         }
 
         try {
-            return SearchFileModel::getFileSearchStore($this->configs["fileSearchStore"]);
+            $stores = $this->listFileSearchStores();
+            foreach ($stores as $store) {
+                if ($store->displayName === $name) {
+                    return $store->name;
+                }
+            }
+
+            $response = $client->fileSearchStores()->create(
+                displayName: $name
+            );
+            
+            return $response->name;
         } catch (\Exception $e) {
-            error_log("Failed to get file search store: " . $e->getMessage());
-            return null;
+            throw new \Exception("Failed to get file search store: " . $e->getMessage());
         }
     }
 
     /**
      * Create a configured generative model instance
      */
-    public function createModel(bool $withGenerationConfig = false) {
+    public function createModel(bool $withGenerationConfig = false): object {
         $client = $this->getClient();
         if (!$client) {
             throw new \Exception("API key not configured", 400);
@@ -107,11 +157,14 @@ class GeminiService {
 
         // Add file search tool
         try {
-            $fileSearchStore = $this->getFileSearchStore();
-            if ($fileSearchStore) {
-                $model->withTool(new Tool(
-                    fileSearch: new FileSearch(fileSearchStoreNames: [$fileSearchStore]),
-                ));
+            $configs = $this->getConfigs();
+            if (!empty($configs["fileSearchStore"])) {  
+                $fileSearchStore = $this->getFileSearchStore($configs["fileSearchStore"]);
+                if ($fileSearchStore) {
+                    $model->withTool(new Tool(
+                        fileSearch: new FileSearch(fileSearchStoreNames: [$fileSearchStore]),
+                    ));
+                }
             }
         } catch (\Exception $e) {
             error_log("Failed to add file search store to model: " . $e->getMessage());

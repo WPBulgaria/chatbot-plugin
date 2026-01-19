@@ -10,9 +10,14 @@ class PlanModel {
 
     const OPTIONS_KEY = "wpb_chatbot_plans";
 
+    protected OptionModel $optionModel;
 
-    public static function list() {
-        $plans = get_option(self::OPTIONS_KEY, []);
+    public function __construct(OptionModel $optionModel) {
+        $this->optionModel = $optionModel;
+    }
+
+    public function list() {
+        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
         if (empty($plans)) {
             return [];
         }
@@ -20,8 +25,8 @@ class PlanModel {
         return array_values(array_filter($plans, fn($plan) => empty($plan["removedAt"])));
     }
 
-    public static function store(array $doc) {
-        $plans = get_option(self::OPTIONS_KEY, []);
+    public function store(array $doc) {
+        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
         if (empty($plans)) {
             return [];
         }
@@ -49,12 +54,12 @@ class PlanModel {
             }
         }
 
-        update_option(self::OPTIONS_KEY, $plans);
+        $this->optionModel->update(self::OPTIONS_KEY, $plans);
         return $id;
     }
 
-    public static function trash(string $id) {
-        $plans = get_option(self::OPTIONS_KEY, []);
+    public function trash(string $id) {
+        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
         if (empty($plans)) {
             return [];
         }
@@ -66,7 +71,7 @@ class PlanModel {
             }
         }
 
-        update_option(self::OPTIONS_KEY, $plans);
+        $this->optionModel->update(self::OPTIONS_KEY, $plans);
         return true;
     }
 

@@ -18,7 +18,7 @@ class FileAction {
         }
 
         try {
-            $file = FileModel::upload($files['file']);
+            $file = wpb_chatbot_app(FileModel::class)->upload($files['file']);
             return new \WP_REST_Response(["success" => true, "file" => $file], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $e->getCode() ?: 500);
@@ -34,7 +34,7 @@ class FileAction {
         }
 
         try {
-            FileRemoveTransaction::execute($id);
+            wpb_chatbot_app(FileRemoveTransaction::class)->execute($id);
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $e->getCode() ?: 500);
@@ -46,7 +46,7 @@ class FileAction {
         $per_page = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
 
-        $result = FileModel::list($per_page, $page);
+        $result = wpb_chatbot_app(FileModel::class)->ulist($per_page, $page);
 
         return new \WP_REST_Response([
             "success" => true,
@@ -64,7 +64,7 @@ class FileAction {
             return new \WP_REST_Response(["success" => false, "message" => "Invalid file ID"], 400);
         }
 
-        $file = FileModel::get($id);
+        $file = wpb_chatbot_app(FileModel::class)->get($id);
         if (!$file) {
             return new \WP_REST_Response(["success" => false, "message" => "File not found"], 404);
         }
@@ -75,7 +75,7 @@ class FileAction {
         }
         
         try {
-            FileUseTransaction::execute($id);
+            wpb_chatbot_app(FileUseTransaction::class)->execute($id);
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $e->getCode() ?: 500);

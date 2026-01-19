@@ -2,86 +2,45 @@
 
 namespace WPBulgaria\Chatbot\Models;
 
-use Gemini\Enums\ModelVariation;
-use Gemini\GeminiHelper;
-use Gemini;
-use Gemini\Enums\FileState;
-use Gemini\Enums\MimeType;
-use Gemini\Enums\Schema;
-use Gemini\Enums\DataType;
 
+use WPBulgaria\Chatbot\Services\GeminiService;
 
 defined( 'ABSPATH' ) || exit;
 
 class SearchFileModel {
-    static function getFileSearchStoreClient() {
-        $configs = ConfigsModel::view();
-        if (empty($configs["apiKey"])) {
-            return false;
-        }
 
-        return Gemini::client($configs["apiKey"]);
+    protected GeminiService $geminiService;
+    protected ConfigsModel $configsModel;
+
+    public function __construct(GeminiService $geminiService, ConfigsModel $configsModel) {
+        $this->geminiService = $geminiService;
+        $this->configsModel = $configsModel;
     }
 
-    static function listFileSearchStores() {
-        $client = self::getFileSearchStoreClient();
-        if (!$client) {
-            throw new \Exception("Gemini client not found");    
-        }
-
-        try {
-            $response = $client->fileSearchStores()->list();
-
-          //  $files = $client->fileSearchStores()->listDocuments($response->fileSearchStores[1]->name);
-          //  var_dump($files);
-           // exit();
-            return $response->fileSearchStores;
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to list file search stores: " . $e->getMessage());
-        }
+    public function listFileSearchStores() {
+        return $this->geminiService->listFileSearchStores();
     }
 
-    static function getFileSearchStore(string $name)
+    public function getFileSearchStore(string $name)
     {
-        $client = self::getFileSearchStoreClient();
-        if (!$client) {
-            throw new \Exception("Gemini client not found");
-        }
-
-        try {
-            $stores = self::listFileSearchStores();
-            foreach ($stores as $store) {
-                if ($store->displayName === $name) {
-                    return $store->name;
-                }
-            }
-
-            $response = $client->fileSearchStores()->create(
-                displayName: $name
-            );
-            
-            return $response->name;
-        
-        } catch (\Exception $e) {
-            throw new \Exception("Failed to get file search store: " . $e->getMessage());
-        }
+        return $this->geminiService->getFileSearchStore($name);
     }   
 
-    static function upload(\WP_Post $attachment) {
-        $configs = ConfigsModel::view();
+    public function upload(\WP_Post $attachment) {
+        $configs = $this->configsModel->view();
     
         if (empty($configs["fileSearchStore"])) {
             throw new \Exception("File Search Store not configured");
         }
 
 
-        $fileSearchStore = self::getFileSearchStore($configs["fileSearchStore"]);
+        $fileSearchStore = $this->getFileSearchStore($configs["fileSearchStore"]);
         if (!$fileSearchStore) {
             throw new \Exception("File Search Store not found");
         }
 
         $path = get_attached_file($attachment->ID);
-        $client = self::getFileSearchStoreClient();
+        $client = $this->geminiService->getClient();
 
         $response = $client->fileSearchStores()->upload(
             storeName: $fileSearchStore,
@@ -92,20 +51,20 @@ class SearchFileModel {
         return $response->documentName;
     }
 
-    static function remove(string $guid) {
-        $configs = ConfigsModel::view();
+    public function remove(string $guid) {
+        $configs = $this->configsModel->view();
     
         if (empty($configs["fileSearchStore"])) {
             throw new \Exception("File Search Store not configured");
         }
 
-        $fileSearchStore = self::getFileSearchStore($configs["fileSearchStore"]);
+        $fileSearchStore = $this->getFileSearchStore($configs["fileSearchStore"]);
 
         if (!$fileSearchStore) {
             throw new \Exception("File Search Store not found");
         }
 
-        $client = self::getFileSearchStoreClient();
+        $client = $this->geminiService->getClient();
 
         if (!$client) {
             throw new \Exception("Gemini client not found");

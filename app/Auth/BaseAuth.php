@@ -9,20 +9,22 @@ defined('ABSPATH') || exit;
 
 abstract class BaseAuth implements AuthInterface {
 
-    protected int $userId;
+    protected int|string $userId;
     protected ?\WP_User $wpUser;
+    protected ConfigsModel $configsModel;
 
-    public function __construct(int $userId) {
+    public function __construct(int|string $userId, ConfigsModel $configsModel) {
         $this->userId = $userId;
         $this->wpUser = \get_user_by('id', $userId) ?: null;
+        $this->configsModel = $configsModel;
     }
 
-    public static function getInstance(int $userId): static {
-        return new static($userId);
+    public static function getInstance(int|string $userId, ConfigsModel $configsModel): static {
+        return new static($userId, $configsModel);
     }
 
     public function isAdminsOnly(): bool {
-        $configs = ConfigsModel::view();
+        $configs = $this->configsModel->view();
         return !empty($configs["adminsOnly"]);
     }
 
@@ -52,5 +54,21 @@ abstract class BaseAuth implements AuthInterface {
      */
     public function remove(string|int $id): bool {
         return current_user_can('manage_options');
+    }
+
+    public function currentUserCan(string $capability, ...$args): bool {
+        return current_user_can($capability, ...$args);
+    }
+
+    public function currentUserId(): int {
+        return get_current_user_id();
+    }
+
+    public function currentUser(): \WP_User {
+        return wp_get_current_user();
+    }
+
+    public function userCan(int $userId, string $capability, ...$args): bool {
+        return user_can($userId, $capability, ...$args);
     }
 }

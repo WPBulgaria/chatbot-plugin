@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 class PlanAction {
 
     static function list() {
-        $result = PlanModel::list();
+        $result = wpb_chatbot_app(PlanModel::class)->list();
         return new \WP_REST_Response($result, 200);
     }
 
@@ -28,7 +28,7 @@ class PlanAction {
         }
 
         try {
-            PlanModel::trash($id);
+            wpb_chatbot_app(PlanModel::class)->trash($id);
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());
@@ -53,7 +53,7 @@ class PlanAction {
             }
 
             $cleanDoc = $validator->getCleanData($doc);
-            $id = PlanModel::store($cleanDoc, $urlParams["id"] ?? null);
+            $id = wpb_chatbot_app(PlanModel::class)->store($cleanDoc, $urlParams["id"] ?? null);
             return new \WP_REST_Response(["success" => true, "plan" => $id], 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());

@@ -2,17 +2,18 @@
 
 namespace WPBulgaria\Chatbot\Auth\Mocks;
 
-use WPBulgaria\Chatbot\Auth\BaseAuth;
+
+use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 defined('ABSPATH') || exit;
 
-class ChatsAuthMock extends BaseAuth {
+class ChatsAuthMock extends BaseAuthMock {
 
-    public function __construct(int $userId) {
-        parent::__construct($userId);
+    public function __construct(int $userId, ConfigsModel $configsModel) {
+        parent::__construct($userId, $configsModel);
     }
 
-    public function list($userId = 0): bool {
+    public function list(int $userId = 0): bool {
         return true;
     }
 

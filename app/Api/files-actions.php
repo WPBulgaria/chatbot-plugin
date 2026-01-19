@@ -7,7 +7,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'WPBulgaria\Chatbot\Actions\FileAction::remove',
         'permission_callback' => function ($request) {
-            return  \WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::create(get_current_user_id())->remove($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::class)->remove($request->get_param('id'));
         }
     ) );
 });
@@ -17,7 +17,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\FileAction::upload',
         'permission_callback' => function () {
-            return  \WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::create(get_current_user_id())->upload();
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::class)->upload();
         }
     ) );
 });
@@ -27,7 +27,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\FileAction::list',
         'permission_callback' => function () {
-            return  \WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::create(get_current_user_id())->list();
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::class)->list();
         }
     ) );
 });
@@ -37,7 +37,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\FileAction::use',
         'permission_callback' => function ($request) {
-            return  \WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::create(get_current_user_id())->use($request->get_param('id'));
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory::class)->use($request->get_param('id'));
         }
     ) );
 });

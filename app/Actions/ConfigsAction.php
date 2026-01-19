@@ -11,7 +11,7 @@ class ConfigsAction {
 
     static function view() {
         try {
-            $configs = ConfigsModel::view(true);
+            $configs = wpb_chatbot_resolve(ConfigsModel::class)->view(true);
             return new \WP_REST_Response($configs, 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], 500);
@@ -33,7 +33,7 @@ class ConfigsAction {
             }
 
             $cleanDoc = $validator->getCleanData($doc);
-            ConfigsModel::store($cleanDoc);
+            wpb_chatbot_resolve(ConfigsModel::class)->store($cleanDoc);
             return new \WP_REST_Response(["success" => true], 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());

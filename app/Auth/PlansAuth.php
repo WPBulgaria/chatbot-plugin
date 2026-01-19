@@ -4,10 +4,12 @@ namespace WPBulgaria\Chatbot\Auth;
 
 defined('ABSPATH') || exit;
 
-class PlansAuth extends BaseAuth {
+use WPBulgaria\Chatbot\Models\ConfigsModel;
 
-    public function __construct(int $userId) {
-        parent::__construct($userId);
+class PlansAuth extends BaseAuth {  
+
+    public function __construct(int $userId, ConfigsModel $configsModel) {
+        parent::__construct($userId, $configsModel);
     }
 
     public function view(): bool {
@@ -15,26 +17,26 @@ class PlansAuth extends BaseAuth {
     }
 
     public function list(): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 
     public function store(): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 
     public function trash(int|string $id): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 
     public function remove(int|string $id): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 
     public function bulkTrash(array $ids): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 
     public function bulkRemove(array $ids): bool {
-        return user_can($this->userId, 'manage_options');
+        return $this->currentUserCan('manage_options');
     }
 }
