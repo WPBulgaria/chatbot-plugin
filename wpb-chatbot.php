@@ -10,9 +10,11 @@ Author URI: https://wpbulgaria.com
 Text Domain: wpbulgaria-chatbot
 **/
 
+use WPBulgaria\Chatbot\Models\ConfigsModel;
+
 defined( 'ABSPATH' ) || exit;
 
-define ('_WPB_CHATBOT_UNLOCK_API', false);
+define ('_WPB_CHATBOT_UNLOCK_API', true);
 
 define("WPB_CHATBOT_VERSION", "0.0.1");
 define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
@@ -50,6 +52,8 @@ add_action("admin_menu", function() {
 
 
 function wpbulgaria_chatbot_shortcode($atts = array(), $content = null) {
+    $configs = ConfigsModel::view(true);
+    $chatTheme = is_array($configs["chatTheme"]) ? json_encode($configs["chatTheme"], JSON_UNESCAPED_UNICODE) : "null";
     ob_start();
     $template_file = WPB_CHATBOT_DIR . '/assets/chat/template.php';
     if ( file_exists($template_file) ) {

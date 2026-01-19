@@ -21,6 +21,7 @@ class ConfigsValidator extends BaseValidator {
             "createdAt" => fn($data) => !$data || validateDate($data),
             "modifiedAt" => fn($data) => !$data || validateDate($data),
             "systemInstructions" => fn($data) => !$data || is_string($data),
+            "chatTheme" => fn($data) => !$data || is_array($data),
 
         ];
     }
