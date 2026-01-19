@@ -10,7 +10,7 @@ defined( 'ABSPATH' ) || exit;
 
 class ChatsAuthFactory {
     public static function create(int $userId, ConfigsModel $configsModel) {
-        if (_WPB_CHATBOT_UNLOCK_API === "!!!unlock it all now") {
+        if (_WPB_CHATBOT_DEBUG && _WPB_CHATBOT_UNLOCK_API === "!!!unlock it all now") {
             return new ChatsAuthMock($userId, $configsModel);
         }
         return new ChatsAuth($userId, $configsModel);

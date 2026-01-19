@@ -8,19 +8,14 @@ use WPBulgaria\Chatbot\Models\ConfigsModel;
 defined('ABSPATH') || exit;
 
 abstract class BaseAuth implements AuthInterface {
-
-    protected int|string $userId;
-    protected ?\WP_User $wpUser;
     protected ConfigsModel $configsModel;
 
-    public function __construct(int|string $userId, ConfigsModel $configsModel) {
-        $this->userId = $userId;
-        $this->wpUser = \get_user_by('id', $userId) ?: null;
+    public function __construct(ConfigsModel $configsModel) {
         $this->configsModel = $configsModel;
     }
 
-    public static function getInstance(int|string $userId, ConfigsModel $configsModel): static {
-        return new static($userId, $configsModel);
+    public static function getInstance(ConfigsModel $configsModel): static {
+        return new static($configsModel);
     }
 
     public function isAdminsOnly(): bool {

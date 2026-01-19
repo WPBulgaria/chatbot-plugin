@@ -8,8 +8,8 @@ defined('ABSPATH') || exit;
 
 class FilesAuthMock extends BaseAuthMock {
 
-    public function __construct(int $userId, ConfigsModel $configsModel) {
-        parent::__construct($userId, $configsModel);
+    public function __construct(ConfigsModel $configsModel) {
+        parent::__construct($configsModel);
     }
 
     public function list(): bool {

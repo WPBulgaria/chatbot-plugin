@@ -73,22 +73,22 @@ class AppServiceProvider extends ServiceProvider {
         
         // Register ChatsAuth as singleton
         $container->singleton(ChatsAuth::class, function ($c) {
-            return new ChatsAuth(get_current_user_id(), $c->make(ConfigsModel::class));
+            return new ChatsAuth($c->make(ConfigsModel::class));
         });
 
         // Register ConfigsAuth as singleton
         $container->singleton(ConfigsAuth::class, function ($c) {
-            return new ConfigsAuth(get_current_user_id(), $c->make(ConfigsModel::class));
+            return new ConfigsAuth($c->make(ConfigsModel::class));
         });
 
         // Register FilesAuth as singleton
         $container->singleton(FilesAuth::class, function ($c) {
-            return new FilesAuth(get_current_user_id(), $c->make(ConfigsModel::class));
+            return new FilesAuth($c->make(ConfigsModel::class));
         });
 
         // Register PlansAuth as singleton
         $container->singleton(PlansAuth::class, function ($c) {
-            return new PlansAuth(get_current_user_id(), $c->make(ConfigsModel::class));
+            return new PlansAuth($c->make(ConfigsModel::class));
         });
 
         // Register FileRemoveTransaction as singleton
@@ -117,23 +117,23 @@ class AppServiceProvider extends ServiceProvider {
 
         // Register ChatsAuthFactory as singleton
         $container->singleton(ChatsAuthFactory::class, function ($c) {
-            return ChatsAuthFactory::create(get_current_user_id(), $c->make(ConfigsModel::class));
+            return ChatsAuthFactory::create($c->make(ConfigsModel::class));
         });
 
         // Register ConfigsAuthFactory as singleton
         $container->singleton(ConfigsAuthFactory::class, function ($c) {
-            return ConfigsAuthFactory::create(get_current_user_id(), $c->make(ConfigsModel::class));
+            return ConfigsAuthFactory::create($c->make(ConfigsModel::class));
         });
 
         // Register FilesAuthFactory as singleton
         $container->singleton(FilesAuthFactory::class, function ($c) {
-            return FilesAuthFactory::create(get_current_user_id(), $c->make(ConfigsModel::class));
+            return FilesAuthFactory::create($c->make(ConfigsModel::class));
         });
 
         
         // Register PlansAuthFactory as singleton
         $container->singleton(PlansAuthFactory::class, function ($c) {
-            return PlansAuthFactory::create(get_current_user_id(), $c->make(ConfigsModel::class));
+            return PlansAuthFactory::create($c->make(ConfigsModel::class));
         });
 
         // Register aliases for convenience

@@ -65,7 +65,9 @@ class FileModel {
         $uploaded = wp_handle_upload($file, $upload_overrides);
 
         if (isset($uploaded['error'])) {
-            throw new \Exception($uploaded['error'], 400);
+            error_log($uploaded['error']);
+            throw new \Exception("File upload failed. Please try again.", 400);
+
         }
 
         $attachment_data = [

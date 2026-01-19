@@ -8,8 +8,8 @@ use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 class PlansAuth extends BaseAuth {  
 
-    public function __construct(int $userId, ConfigsModel $configsModel) {
-        parent::__construct($userId, $configsModel);
+    public function __construct(ConfigsModel $configsModel) {
+        parent::__construct($configsModel);
     }
 
     public function view(): bool {

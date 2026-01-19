@@ -8,8 +8,8 @@ use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 class ChatsAuth extends BaseAuth {
 
-    public function __construct(int $userId, ConfigsModel $configsModel) {
-        parent::__construct($userId, $configsModel);
+    public function __construct(ConfigsModel $configsModel) {
+        parent::__construct($configsModel);
     }
 
     public function list($userId = 0): bool {
@@ -18,7 +18,7 @@ class ChatsAuth extends BaseAuth {
         }
 
         if (!empty($userId) && $userId > 0 && !$this->currentUserCan('edit_others_posts')) {
-            return $userId === $this->userId;
+            return $userId === $this->currentUserId();
         }
 
         return $this->currentUserCan('edit_others_posts');

@@ -41,9 +41,9 @@ function user_rate_limit_exceeded(): bool {
     $rate_count = get_transient($rate_key) ?: 0;
 
     if ($rate_count >= 10) { // 10 requests per minute
-        return false;
+        return true;
     }
 
     set_transient($rate_key, $rate_count + 1, 60);
-    return true;
+    return false;
 }

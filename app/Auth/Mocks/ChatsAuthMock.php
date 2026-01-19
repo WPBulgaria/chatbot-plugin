@@ -9,8 +9,8 @@ defined('ABSPATH') || exit;
 
 class ChatsAuthMock extends BaseAuthMock {
 
-    public function __construct(int $userId, ConfigsModel $configsModel) {
-        parent::__construct($userId, $configsModel);
+    public function __construct(ConfigsModel $configsModel) {
+        parent::__construct($configsModel);
     }
 
     public function list(int $userId = 0): bool {

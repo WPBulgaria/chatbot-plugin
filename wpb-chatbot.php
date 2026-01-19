@@ -13,7 +13,9 @@ Text Domain: wpbulgaria-chatbot
 defined('ABSPATH') || exit;
 
 // Constants
-define('_WPB_CHATBOT_UNLOCK_API', "!!!unlock it all now");
+
+define('_WPB_CHATBOT_DEBUG', false);
+define('_WPB_CHATBOT_UNLOCK_API', false);
 define('WPB_CHATBOT_VERSION', '0.0.1');
 define('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
 define('WPB_CHATBOT_DIR', __DIR__);
@@ -109,16 +111,5 @@ register_activation_hook(__FILE__, 'wpbulgaria_chatbot_install');
 function wpbulgaria_chatbot_install(): void {
     global $wp_rewrite;
     $wp_rewrite->flush_rules();
-
-    /*
-    $collate = $wpdb->get_charset_collate();
-    $prefix = $wpdb->prefix;
-    $sql = "";
-
-
-    require_once ABSPATH . 'wp-admin/includes/upgrade.php';
-    dbDelta( $sql ); 
-    */
-
     add_option( 'wpbulgaria_chatbot_db_version', 1);   
 }

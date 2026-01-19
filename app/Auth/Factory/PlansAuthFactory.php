@@ -8,10 +8,10 @@ use WPBulgaria\Chatbot\Models\ConfigsModel;
 defined( 'ABSPATH' ) || exit;
 
 class PlansAuthFactory {
-    public static function create(int $userId, ConfigsModel $configsModel) {
-        if (_WPB_CHATBOT_UNLOCK_API === "!!!unlock it all now") {
-            return new PlansAuthMock($userId, $configsModel);  
+    public static function create(ConfigsModel $configsModel) {
+        if (_WPB_CHATBOT_DEBUG && _WPB_CHATBOT_UNLOCK_API === "!!!unlock it all now") {
+            return new PlansAuthMock($configsModel);  
         }
-        return new PlansAuth($userId, $configsModel);
+        return new PlansAuth($configsModel);
     }
 }
