@@ -45,7 +45,8 @@ class FileModel {
         $allowed_types_values = array_values(self::ALLOWED_TYPES);
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
-            throw new \Exception("File upload error", 400);
+            error_log("File upload error: " . $file['error']);
+            throw new \Exception("File upload error...", 400);
         }
 
         if ($file['size'] > self::MAX_FILE_SIZE) {

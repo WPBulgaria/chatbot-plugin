@@ -73,7 +73,7 @@ class PlanModel {
 
     public function store(array $doc) {
         $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
-        if (empty($plans)) {
+        if (empty($doc)) {
             return [];
         }
 
