@@ -68,7 +68,7 @@ class AppServiceProvider extends ServiceProvider {
 
         // Register ChatModel as singleton
         $container->singleton(ChatModel::class, function ($c) {
-            return new ChatModel($c->make(GeminiService::class), $c->make(PostModel::class), $c->make(AuthInterface::class));
+            return new ChatModel($c->make(GeminiService::class), $c->make(PostModel::class), $c->make(ChatsAuthFactory::class));
         });
         
         // Register ChatsAuth as singleton

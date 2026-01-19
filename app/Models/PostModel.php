@@ -22,15 +22,15 @@ class PostModel extends BaseModel {
     }
 
     public function trash(int|string $postId): bool {
-        return wp_trash_post($postId);
+        return !!wp_trash_post($postId);
     }
 
     public function untrash(int|string $postId): bool {
-        return wp_untrash_post($postId);
+        return !!wp_untrash_post($postId);
     }
 
     public function delete(int|string $postId): bool {
-        return wp_delete_post($postId, true);
+        return !!wp_delete_post($postId, true);
     }
 
     public function get(int|string $postId): ?\WP_Post {

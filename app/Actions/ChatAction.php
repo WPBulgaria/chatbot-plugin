@@ -30,7 +30,7 @@ class ChatAction {
         $page = isset($params['page']) ? absint($params['page']) : 1;
         $userId = isset($params['user_id']) ? absint($params['user_id']) : 0;
 
-        $result = ChatModel::list($userId, $perPage, $page);
+        $result = wpb_chatbot_app(ChatModel::class)->list($userId, $perPage, $page);
 
         return new \WP_REST_Response([
             "success" => true,
@@ -51,7 +51,7 @@ class ChatAction {
             return new \WP_REST_Response(["success" => false, "message" => "Invalid chat ID"], 400);
         }
 
-        $chat = ChatModel::get($id);
+        $chat = wpb_chatbot_app(ChatModel::class)->get($id);
 
         if (!$chat) {
             return new \WP_REST_Response(["success" => false, "message" => "Chat not found"], 404);
@@ -96,7 +96,7 @@ class ChatAction {
         try {
             // Use ChatService via DI
             $chatService = self::getChatService();
-            $result = $chatService->sendMessage($message, $chatId);
+            $result = wpb_chatbot_app(ChatModel::class)->chat($message, $chatId);
 
             return new \WP_REST_Response([
                 "success" => true,
@@ -135,7 +135,7 @@ class ChatAction {
         }
 
         try {
-            ChatModel::updateTitle($id, $title);
+            wpb_chatbot_app(ChatModel::class)->updateTitle($id, $title);
 
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
@@ -159,7 +159,7 @@ class ChatAction {
         }
 
         try {
-            ChatModel::trash($id);
+            wpb_chatbot_app(ChatModel::class)->trash($id);
 
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
@@ -183,7 +183,7 @@ class ChatAction {
         }
 
         try {
-            ChatModel::remove($id);
+            wpb_chatbot_app(ChatModel::class)->remove($id);
 
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
@@ -207,7 +207,7 @@ class ChatAction {
         }
 
         try {
-            ChatModel::restore($id);
+            wpb_chatbot_app(ChatModel::class)->restore($id);
 
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
@@ -263,8 +263,7 @@ class ChatAction {
 
         try {
             // Use ChatService via DI
-            $chatService = self::getChatService();
-            $chatService->streamMessage($message, $chatId);
+            wpb_chatbot_app(ChatModel::class)->stream($message, $chatId);
         } catch (\Exception $e) {
             $code = $e->getCode() ?: 500;
             echo "event: error\n";

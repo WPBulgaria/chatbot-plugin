@@ -46,7 +46,7 @@ class FileAction {
         $per_page = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
 
-        $result = wpb_chatbot_app(FileModel::class)->ulist($per_page, $page);
+        $result = wpb_chatbot_app(FileModel::class)->list($per_page, $page);
 
         return new \WP_REST_Response([
             "success" => true,
