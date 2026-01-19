@@ -240,6 +240,18 @@ class ChatModel extends BaseModel {
     }
 
     /**
+     * Get chat messages
+     */
+    public function getMessages(int|string $id): array {
+        $message = $this->postModel->getMeta($id, self::META_MESSAGES);
+        if (!is_array($message) && is_string($message)) {
+            $message = json_decode($message, true, JSON_UNESCAPED_UNICODE);
+            $message = is_array($message) ? $message : [];
+        }
+        return $message;
+    }
+
+    /**
      * Update chat messages
      */
     public function updateMessages(int $id, array $messages): bool {

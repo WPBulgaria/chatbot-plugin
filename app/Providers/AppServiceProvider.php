@@ -5,6 +5,7 @@ namespace WPBulgaria\Chatbot\Providers;
 use WPBulgaria\Chatbot\Container\Container;
 use WPBulgaria\Chatbot\Services\GeminiService;
 use WPBulgaria\Chatbot\Services\ChatService;
+use WPBulgaria\Chatbot\Services\PlanService;
 use WPBulgaria\Chatbot\Models\ConfigsModel;
 use WPBulgaria\Chatbot\Models\OptionModel;
 use WPBulgaria\Chatbot\Models\FileModel;
@@ -73,7 +74,10 @@ class AppServiceProvider extends ServiceProvider {
         
         // Register ChatsAuth as singleton
         $container->singleton(ChatsAuth::class, function ($c) {
-            return new ChatsAuth($c->make(ConfigsModel::class));
+            return new ChatsAuth(
+                $c->make(ConfigsModel::class),
+                $c->make(PlanService::class)
+            );
         });
 
         // Register ConfigsAuth as singleton
@@ -115,9 +119,21 @@ class AppServiceProvider extends ServiceProvider {
             );
         });
 
+        // Register PlanService as singleton
+        $container->singleton(PlanService::class, function ($c) {
+            return new PlanService(
+                $c->make(PlanModel::class),
+                $c->make(ConfigsModel::class),
+                $c->make(PostModel::class)
+            );
+        });
+
         // Register ChatsAuthFactory as singleton
         $container->singleton(ChatsAuthFactory::class, function ($c) {
-            return ChatsAuthFactory::create($c->make(ConfigsModel::class));
+            return ChatsAuthFactory::create(
+                $c->make(ConfigsModel::class),
+                $c->make(PlanService::class)
+            );
         });
 
         // Register ConfigsAuthFactory as singleton
@@ -140,6 +156,7 @@ class AppServiceProvider extends ServiceProvider {
         $container->alias(GeminiService::class, 'gemini');
         $container->alias(ChatService::class, 'chat');
         $container->alias(ConfigsModel::class, 'config');
+        $container->alias(PlanService::class, 'plan');
     }
 
     /**

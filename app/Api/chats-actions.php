@@ -8,7 +8,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->list((int) $request->get_param('user_id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->list((int) $request->get_param('user_id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -19,7 +24,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::get',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->get($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->get($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -29,8 +39,19 @@ add_action( 'rest_api_init', function () {
     register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats', array(
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
-        'permission_callback' => function () {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->chat();
+        'permission_callback' => function ($request) {
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+
+            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+
+
+            $result = $auth->chat();
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -41,7 +62,17 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->chat($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+
+            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+
+            $result = $auth->chat($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -52,7 +83,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'PUT',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::updateTitle',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->updateTitle($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->updateTitle($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -63,7 +99,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::trash',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->trash($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->trash($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -74,7 +115,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'DELETE',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::remove',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->remove($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->remove($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -85,7 +131,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::restore',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->restore($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->restore($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -97,7 +148,17 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->stream();
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+
+            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+
+            $result = $auth->stream();
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });
@@ -108,7 +169,24 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class)->stream($request->get_param('id'));
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+
+            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+
+            $messages = wpb_chatbot_app(\WPBulgaria\Chatbot\Models\ChatModel::class)->getMessages($request->get_param('id'));
+
+            if (!$auth->canAnnonAskQuestion(count($messages))) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+
+
+            $result = $auth->stream($request->get_param('id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
         }
     ) );
 });

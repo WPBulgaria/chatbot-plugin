@@ -5,6 +5,7 @@ namespace WPBulgaria\Chatbot\Actions;
 use WPBulgaria\Chatbot\Models\ChatModel;
 use WPBulgaria\Chatbot\Services\ChatService;
 use WPBulgaria\Chatbot\Validators\Chat\ChatValidator;
+use function WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded;
 
 defined('ABSPATH') || exit;
 
@@ -67,7 +68,7 @@ class ChatAction {
      * Send a chat message (uses DI via ChatService)
      */
     public static function chat(\WP_REST_Request $request): \WP_REST_Response {
-        if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
+        if (user_rate_limit_exceeded()) {
             return new \WP_REST_Response(["success" => false, "message" => "Rate limit exceeded"], 429);
         }
 
@@ -230,7 +231,7 @@ class ChatAction {
         header('X-Accel-Buffering: no');
         header('X-SSE: 1');
 
-        if (\WPBulgaria\Chatbot\Functions\user_rate_limit_exceeded()) {
+        if (user_rate_limit_exceeded()) {
             echo "event: error\n";
             echo "data: " . json_encode(['success' => false, 'message' => "Rate limit exceeded", "code" => 429]) . "\n\n";
             flush();

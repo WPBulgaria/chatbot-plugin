@@ -9,6 +9,7 @@ defined( 'ABSPATH' ) || exit;
 class PlanModel {
 
     const OPTIONS_KEY = "wpb_chatbot_plans";
+    const USER_PLAN_META_KEY = "wpb_chatbot_user_plan";
 
     protected OptionModel $optionModel;
 
@@ -16,13 +17,58 @@ class PlanModel {
         $this->optionModel = $optionModel;
     }
 
-    public function list() {
+    public function list(): array {
         $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
         if (empty($plans)) {
             return [];
         }
         
         return array_values(array_filter($plans, fn($plan) => empty($plan["removedAt"])));
+    }
+
+    /**
+     * Get a plan by ID
+     */
+    public function get(string $id): ?array {
+        if (empty($id)) {
+            return null;
+        }
+
+        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
+        if (empty($plans)) {
+            return null;
+        }
+
+        foreach ($plans as $plan) {
+            if ($plan["id"] === $id && empty($plan["removedAt"])) {
+                return $plan;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Get user's assigned plan ID from user meta
+     */
+    public function getUserPlanId(int $userId): ?string {
+        if ($userId <= 0) {
+            return null;
+        }
+
+        $planId = get_user_meta($userId, self::USER_PLAN_META_KEY, true);
+        return !empty($planId) ? $planId : null;
+    }
+
+    /**
+     * Set user's plan ID in user meta
+     */
+    public function setUserPlan(int $userId, string $planId): bool {
+        if ($userId <= 0) {
+            return false;
+        }
+
+        return (bool) update_user_meta($userId, self::USER_PLAN_META_KEY, $planId);
     }
 
     public function store(array $doc) {

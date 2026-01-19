@@ -47,3 +47,15 @@ function user_rate_limit_exceeded(): bool {
     set_transient($rate_key, $rate_count + 1, 60);
     return false;
 }
+
+function mb_str_word_count($string) {
+    if (empty($string)) {
+        return 0;
+    }
+
+    // Match any sequence of Unicode letters, numbers, or apostrophes
+    // Removed the '^' to match words instead of separators
+    preg_match_all('/[\p{L}\p{N}\']+/u', $string, $matches);
+    
+    return count($matches[0]);
+}

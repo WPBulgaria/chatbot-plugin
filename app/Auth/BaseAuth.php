@@ -4,14 +4,41 @@ namespace WPBulgaria\Chatbot\Auth;
 
 use WPBulgaria\Chatbot\Contracts\AuthInterface;
 use WPBulgaria\Chatbot\Models\ConfigsModel;
+use WPBulgaria\Chatbot\DataObjects\Auth\AuthError;
 
 defined('ABSPATH') || exit;
 
 abstract class BaseAuth implements AuthInterface {
     protected ConfigsModel $configsModel;
+    protected ?AuthError $authError = null;
 
     public function __construct(ConfigsModel $configsModel) {
         $this->configsModel = $configsModel;
+    }
+
+
+    public function setError(AuthError $authError): void {
+        $this->authError = $authError;
+    }
+
+    public function getError(): ?AuthError {
+        return $this->authError;
+    }
+
+    public function clearError(): void {
+        $this->authError = null;
+    }
+
+    public function check(bool $check, callable $callback): bool {
+        if (!$check) {
+            $callback();
+        }
+        return $check;
+    }
+
+
+    public function hasError(): bool {
+        return $this->authError !== null;
     }
 
     public static function getInstance(ConfigsModel $configsModel): static {
