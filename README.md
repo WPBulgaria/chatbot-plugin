@@ -54,7 +54,7 @@ An AI-powered chatbot for WordPress using Google Gemini API with plan-based auth
 
 ### Requirements
 
-- PHP 8.1 or higher
+- PHP 8.4 or higher
 - WordPress 6.0 or higher
 - Google Gemini API key
 - Composer (for dependency installation)
