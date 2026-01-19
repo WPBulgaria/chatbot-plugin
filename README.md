@@ -327,4 +327,4 @@ This project is licensed under the GPLv2 or later - see the [LICENSE](LICENSE) f
 
 **Sashe Vuchkov**
 - Website: [wpbulgaria.com](https://wpbulgaria.com)
-- Email: sashe@buhalbu.com
+- Email: sashe@wpbulgaria.com
