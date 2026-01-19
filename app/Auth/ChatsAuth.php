@@ -2,10 +2,11 @@
 
 namespace WPBulgaria\Chatbot\Auth;
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class ChatsAuth extends BaseAuth {
-    public function __construct($userId) {
+
+    public function __construct(int $userId) {
         parent::__construct($userId);
     }
 
@@ -14,58 +15,63 @@ class ChatsAuth extends BaseAuth {
             return current_user_can('manage_options');
         }
 
-        if (!empty($userId) && $userId > 0 && !current_user_can('edit_others_posts') ) {
+        if (!empty($userId) && $userId > 0 && !current_user_can('edit_others_posts')) {
             return $userId === $this->userId;
         }
-
 
         return current_user_can('edit_others_posts');
     }
 
-    public function get($id): bool {
+    public function get(int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
     }
 
-    public function chat($id = null): bool {
+    public function store(): bool {
+        if ($this->isAdminsOnly()) {
+            return current_user_can('manage_options');
+        }
+        return current_user_can('edit_others_posts') || current_user_can('edit_posts');
+    }
+
+    public function chat(int|string|null $id = null): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
     }
 
-    public function stream($id = null): bool {
+    public function stream(int|string|null $id = null): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
     }
 
-
-    public function updateTitle($id): bool {
+    public function updateTitle(int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('edit_others_posts') || current_user_can('edit_post', $id);
     }
 
-    public function trash($id): bool {
+    public function trash(int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('delete_others_posts') || current_user_can('delete_post', $id);
     }
 
-    public function remove($id): bool {
+    public function remove(int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }
         return current_user_can('delete_others_posts') || current_user_can('delete_post', $id);
     }
 
-    public function restore($id): bool {
+    public function restore(int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return current_user_can('manage_options');
         }

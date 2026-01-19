@@ -2,30 +2,30 @@
 
 namespace WPBulgaria\Chatbot\Validators;
 
-defined( 'ABSPATH' ) || exit;
+use WPBulgaria\Chatbot\Contracts\ValidatorInterface;
 
-class BaseValidator {
-    protected $errors = [];
-    protected $rules = [];
-    protected $messages = [];
-    protected $data = [];
+defined('ABSPATH') || exit;
 
-    static function make()
-    {
+class BaseValidator implements ValidatorInterface {
+    protected array $errors = [];
+    protected array $rules = [];
+    protected array $messages = [];
+    protected array $data = [];
+
+    public static function make(): static {
         return new static();
     }
 
-    public function isValidField($field, $data) {
+    public function isValidField(string $field, mixed $data): bool {
         $fields = array_keys($this->rules);
         $errors = [];
+
         if (!in_array($field, $fields)) {
             $errors[$field] = "Unknown field '{$field}'";
-
         } else if ($this->rules[$field] instanceof BaseValidator) {
-
-                if (!$this->rules[$field]->isValid($data)) {
-                    $errors = array_merge($this->rules[$field]->getErrors(), $errors);
-                }
+            if (!$this->rules[$field]->isValid($data)) {
+                $errors = array_merge($this->rules[$field]->getErrors(), $errors);
+            }
         } else if (!$this->rules[$field]($data)) {
             $errors[$field] = $this->messages[$field] ?? "Invalid field '{$field}'";
         }
@@ -33,10 +33,11 @@ class BaseValidator {
         $this->errors = $errors;
         return empty($errors);
     }
-    public function isValid($data): bool
-    {
-        $errors = array();
+
+    public function isValid(array $data): bool {
+        $errors = [];
         $fields = array_keys($this->rules);
+
         foreach ($this->rules as $field => $rule) {
             if (!in_array($field, $fields)) {
                 $errors[$field] = "Unknown field '{$field}'";
@@ -51,6 +52,7 @@ class BaseValidator {
 
         $this->errors = $errors;
         $isValid = empty($errors);
+
         if ($isValid) {
             $this->data = $data;
         }
@@ -58,9 +60,9 @@ class BaseValidator {
         return $isValid;
     }
 
-    public function getCleanData(array $data)
-    {
+    public function getCleanData(array $data): array {
         $clean = [];
+
         foreach ($this->rules as $field => $rule) {
             if (isset($data[$field])) {
                 $clean[$field] = $data[$field];
@@ -70,7 +72,7 @@ class BaseValidator {
         return $clean;
     }
 
-    public function getConfigObject() {
+    public function getConfigObject(): \stdClass {
         return new \stdClass();
     }
 

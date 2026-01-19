@@ -2,30 +2,64 @@
 
 namespace WPBulgaria\Chatbot\Models;
 
-use Gemini;
-use Gemini\Data\Content;
-use Gemini\Enums\Role;
-use Gemini\Data\FileSearch;
-use Gemini\Data\Tool;
-use Gemini\Data\GenerationConfig;
-use WPBulgaria\Chatbot\Models\SearchFileModel;
+use WPBulgaria\Chatbot\Services\GeminiService;
 
-defined( 'ABSPATH' ) || exit;
+defined('ABSPATH') || exit;
 
 class ChatModel {
 
     const POST_TYPE = 'wpb_chat';
     const META_MESSAGES = '_wpb_chat_messages';
 
-    public static function getClient() {
-        $configs = ConfigsModel::view();
-        if (empty($configs["apiKey"])) {
-            return false;
+    /**
+     * Prepare chat context for sending messages
+     * Reduces duplication between chat() and stream() methods
+     * 
+     * @return array{geminiService: GeminiService, userId: int, isNewChat: bool, chat: array|null, messages: array}
+     */
+    protected static function prepareChat(?int $chatId, ?int $userId = null): array {
+        $geminiService = new GeminiService();
+
+        if (!$geminiService->isConfigured()) {
+            throw new \Exception("API key not configured", 400);
         }
 
-        return Gemini::client($configs["apiKey"]);
+        $userId = $userId ?? get_current_user_id();
+        $isNewChat = empty($chatId);
+        $chat = $isNewChat ? null : self::get($chatId);
+
+        if (!$isNewChat && !$chat) {
+            throw new \Exception("Chat not found", 404);
+        }
+
+        $messages = $isNewChat ? [] : ($chat['messages'] ?? []);
+
+        return [
+            'geminiService' => $geminiService,
+            'userId'        => $userId,
+            'isNewChat'     => $isNewChat,
+            'chat'          => $chat,
+            'messages'      => $messages,
+        ];
     }
 
+    /**
+     * Add user message to messages array
+     */
+    protected static function addUserMessage(array &$messages, string $message): void {
+        $messages[] = GeminiService::createMessage('user', $message);
+    }
+
+    /**
+     * Add model response to messages array
+     */
+    protected static function addModelMessage(array &$messages, string $response): void {
+        $messages[] = GeminiService::createMessage('model', $response);
+    }
+
+    /**
+     * List chats with pagination
+     */
     public static function list(int $userId = 0, int $perPage = 20, int $page = 1): array {
         $args = [
             'post_type'      => self::POST_TYPE,
@@ -38,7 +72,7 @@ class ChatModel {
 
         if ($userId > 0 && current_user_can('edit_others_posts')) {
             $args['author'] = $userId;
-        } else if(!current_user_can('edit_others_posts')) {
+        } else if (!current_user_can('edit_others_posts')) {
             $args['author'] = get_current_user_id();
         }
 
@@ -56,9 +90,12 @@ class ChatModel {
         ];
     }
 
+    /**
+     * Get a single chat by ID
+     */
     public static function get(int $id): ?array {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE || $post->post_status === 'trash') {
             return null;
         }
@@ -66,213 +103,114 @@ class ChatModel {
         return self::formatChat($post, true);
     }
 
-    protected static function getFileSearchStore() {
-        $configs = ConfigsModel::view();
-        if (empty($configs["fileSearchStore"])) {
-            return null;
-        }
-
-        return SearchFileModel::getFileSearchStore($configs["fileSearchStore"]);
-    }
-
-
+    /**
+     * Stream chat response via SSE
+     */
     public static function stream(string $message, ?int $chatId = null, ?int $userId = null): array {
-        $client = self::getClient();
-        if (!$client) {
-            throw new \Exception("API key not configured", 400);
-        }
+        $context = self::prepareChat($chatId, $userId);
 
-        $userId = $userId ?? get_current_user_id();
-        $isNewChat = empty($chatId);
-        $chat = $isNewChat ? null : self::get($chatId);
+        /** @var GeminiService $geminiService */
+        $geminiService = $context['geminiService'];
+        /** @var int $contextUserId */
+        $contextUserId = $context['userId'];
+        /** @var bool $isNewChat */
+        $isNewChat = $context['isNewChat'];
+        /** @var array|null $chat */
+        $chat = $context['chat'];
+        /** @var array $messages */
+        $messages = $context['messages'];
 
-        if (!$isNewChat && !$chat) {
-            throw new \Exception("Chat not found", 404);
-        }
-
-        $messages = $isNewChat ? [] : $chat['messages'];
-
+        // Create chat early for streaming so we have an ID
+        $title = '';
+        $streamChatId = $chatId;
         if ($isNewChat) {
             $title = self::generateTitle($message);
-            $chatId = self::create($title, $messages, $userId);
-        } 
+            $streamChatId = self::create($title, $messages, $contextUserId);
+        }
 
-        $messages[] = [
-            'role'      => 'user',
-            'content'   => $message,
-            'createdAt' => date(DATE_ATOM),
-        ];
-
-        $history = self::buildGeminiHistory($messages);
-        $responseText = '';
+        self::addUserMessage($messages, $message);
+        $history = $geminiService->buildHistory($messages);
 
         try {
-            $configs = ConfigsModel::view();
-            $model = $configs["model"] ?? "gemini-2.5-flash";
-            
-            $model = $client->generativeModel($model);
+            $responseText = $geminiService->streamMessage(
+                $message,
+                $history,
+                function ($chunkText) use ($streamChatId, $isNewChat, $title) {
+                    $payload = json_encode([
+                        'success' => true,
+                        'message' => $chunkText,
+                        'chatId'  => $streamChatId,
+                        'isNew'   => $isNewChat,
+                        'title'   => $title
+                    ], JSON_UNESCAPED_UNICODE);
 
-            $generateConfig = new GenerationConfig(
-                temperature: 0.1,       // Keep low (0.0 - 0.2) for strict adherence to facts in files.
-                maxOutputTokens: 800,   // 4096 is overkill and risky. 800 covers ~350 words, plenty for your limit.
-                topP: 0.8,              // Lowering slightly reduces "creative" padding words.
-                topK: 20,               // Forces the model to pick the most likely words faster (more direct).
-                stopSequences: [],
+                    echo "data: " . $payload . "\n\n";
+
+                    if (ob_get_level() > 0) {
+                        ob_end_flush();
+                    }
+                    flush();
+                }
             );
 
-            $model->withGenerationConfig($generateConfig);
+            self::addModelMessage($messages, $responseText);
+            self::updateMessages($streamChatId, $messages);
 
-            if (!empty($configs["systemInstructions"])) {
-                $model->withSystemInstruction(Content::parse(part: $configs["systemInstructions"]));
-            }
-
-           
-
-            try {
-                $fileSearchStore = self::getFileSearchStore();
-
-                if ($fileSearchStore) {
-                $model->withTool(new Tool(
-                        fileSearch: new FileSearch(fileSearchStoreNames: [$fileSearchStore]),
-                    ));
-                }
-            } catch (\Exception $e) {
-                error_log("Failed to add file search store to model: " . $e->getMessage());
-            }
-     
-
-            $stream = $model->startChat(history: $history)->streamSendMessage($message);
-
-            // Close the session to prevent blocking
-            session_write_close();
-            $responseText = '';
-            foreach ($stream as $chunk) {
-                // Extract text from this specific chunk
-                $chunkText = '';
-
-                // Check if there are candidates and parts before trying to read them
-                if ($chunk->candidates && count($chunk->candidates) > 0) {
-                    foreach ($chunk->parts() as $part) {
-                        // Only append if it is actually a TextPart
-                        if (!empty($part->text)) {
-                            $chunkText .= $part->text;
-                            $responseText .= $part->text;
-                        }
-                    }
-                }
-                
-                // If the chunk is empty, skip it to avoid confusing the client
-                if (empty($chunkText)) {
-                    continue;
-                }
-
-                // We format this as a Server-Sent Event (SSE) data line.
-                // Sending JSON ensures safely escaping newlines/quotes.
-                $payload = json_encode(['success' => true, 'message' => $chunkText, 'chatId' => $chatId, 'isNew' => $isNewChat, 'title' => $title], JSON_UNESCAPED_UNICODE);
-                
-                echo "data: " . $payload . "\n\n";
-
-                // FLUSH BUFFER IMMEDIATELY
-                // This forces PHP to send the data to the browser right now
-                if (ob_get_level() > 0) {
-                    ob_end_flush();
-                }
-                flush();
-            }
-
-            
-
-            $messages[] = [
-                'role'      => 'model',
-                'content'   => $responseText,
-                'createdAt' => date(DATE_ATOM),
-            ];
-
-            
-            self::updateMessages($chatId, $messages);
             return [];
         } catch (\Exception $e) {
             throw new \Exception("Failed to get AI response: " . $e->getMessage(), 500);
         }
     }
 
-
+    /**
+     * Send chat message and get response
+     */
     public static function chat(string $message, ?int $chatId = null, ?int $userId = null): array {
-        $client = self::getClient();
-        if (!$client) {
-            throw new \Exception("API key not configured", 400);
-        }
+        $context = self::prepareChat($chatId, $userId);
 
-        $userId = $userId ?? get_current_user_id();
-        $isNewChat = empty($chatId);
-        $chat = $isNewChat ? null : self::get($chatId);
+        /** @var GeminiService $geminiService */
+        $geminiService = $context['geminiService'];
+        /** @var int $contextUserId */
+        $contextUserId = $context['userId'];
+        /** @var bool $isNewChat */
+        $isNewChat = $context['isNewChat'];
+        /** @var array|null $chat */
+        $chat = $context['chat'];
+        /** @var array $messages */
+        $messages = $context['messages'];
 
-        if (!$isNewChat && !$chat) {
-            throw new \Exception("Chat not found", 404);
-        }
-
-        $messages = $isNewChat ? [] : $chat['messages'];
-
-        $messages[] = [
-            'role'      => 'user',
-            'content'   => $message,
-            'createdAt' => date(DATE_ATOM),
-        ];
-
-        $history = self::buildGeminiHistory($messages);
+        self::addUserMessage($messages, $message);
+        $history = $geminiService->buildHistory($messages);
 
         try {
-            $configs = ConfigsModel::view();
-            $model = $configs["model"] ?? "gemini-2.5-flash";
-            
-            $model = $client->generativeModel($model);
+            $responseText = $geminiService->sendMessage($message, $history);
 
-            if (!empty($configs["systemInstructions"])) {
-                $model->withSystemInstruction(Content::parse(part: $configs["systemInstructions"]));
-            }
+            self::addModelMessage($messages, $responseText);
 
-           
-
-            try {
-                $fileSearchStore = self::getFileSearchStore();
-
-                if ($fileSearchStore) {
-                $model->withTool(new Tool(
-                        fileSearch: new FileSearch(fileSearchStoreNames: [$fileSearchStore]),
-                    ));
-                }
-            } catch (\Exception $e) {
-                error_log("Failed to add file search store to model: " . $e->getMessage());
-            }
-     
-
-            $response = $model->startChat(history: $history)->sendMessage($message);
-            $responseText = $response->text();
-
-            $messages[] = [
-                'role'      => 'model',
-                'content'   => $responseText,
-                'createdAt' => date(DATE_ATOM),
-            ];
-
+            $title = '';
+            $resultChatId = $chatId;
             if ($isNewChat) {
                 $title = self::generateTitle($message);
-                $chatId = self::create($title, $messages, $userId);
+                $resultChatId = self::create($title, $messages, $contextUserId);
             } else {
                 self::updateMessages($chatId, $messages);
+                $title = $chat['title'] ?? '';
             }
 
             return [
-                'chatId'   => $chatId,
-                'message'  => $responseText,
-                'isNew'    => $isNewChat,
-                'title'    => $isNewChat ? $title : $chat['title'],
+                'chatId'  => $resultChatId,
+                'message' => $responseText,
+                'isNew'   => $isNewChat,
+                'title'   => $title,
             ];
         } catch (\Exception $e) {
             throw new \Exception("Failed to get AI response: " . $e->getMessage(), 500);
         }
     }
 
+    /**
+     * Create a new chat
+     */
     public static function create(string $title, array $messages = [], int $userId = 0): int {
         $userId = $userId ?: get_current_user_id();
 
@@ -292,27 +230,33 @@ class ChatModel {
         return $postId;
     }
 
+    /**
+     * Update chat messages
+     */
     public static function updateMessages(int $id, array $messages): bool {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
 
         update_post_meta($id, self::META_MESSAGES, $messages);
-        
+
         wp_update_post([
-            'ID'            => $id,
-            'post_modified' => current_time('mysql'),
+            'ID'                => $id,
+            'post_modified'     => current_time('mysql'),
             'post_modified_gmt' => current_time('mysql', true),
         ]);
 
         return true;
     }
 
+    /**
+     * Update chat title
+     */
     public static function updateTitle(int $id, string $title): bool {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
@@ -329,9 +273,12 @@ class ChatModel {
         return true;
     }
 
+    /**
+     * Trash a chat (soft delete)
+     */
     public static function trash(int $id): bool {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
@@ -345,9 +292,12 @@ class ChatModel {
         return true;
     }
 
+    /**
+     * Permanently delete a chat
+     */
     public static function remove(int $id): bool {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
@@ -361,9 +311,12 @@ class ChatModel {
         return true;
     }
 
+    /**
+     * Restore a trashed chat
+     */
     public static function restore(int $id): bool {
         $post = get_post($id);
-        
+
         if (!$post || $post->post_type !== self::POST_TYPE) {
             throw new \Exception("Chat not found", 404);
         }
@@ -377,59 +330,42 @@ class ChatModel {
         return true;
     }
 
+    /**
+     * Format chat post for API response
+     */
     private static function formatChat(\WP_Post $post, bool $includeMessages = false): array {
-        $messages = [];
-        
-        if ($includeMessages) {
-            $messagesJson = get_post_meta($post->ID, self::META_MESSAGES, true);
-            $messages = $messagesJson ? json_decode($messagesJson, true, JSON_UNESCAPED_UNICODE) : [];
-            $messages = is_array($messages) ? $messages : [];
-        }
+        $messages = get_post_meta($post->ID, self::META_MESSAGES, true);
 
-        $messageCount = 0;
-        if (!$includeMessages) {
-            $messagesJson = get_post_meta($post->ID, self::META_MESSAGES, true);
-            $messages = $messagesJson ? json_decode($messagesJson, true, JSON_UNESCAPED_UNICODE) : [];
+        if (!is_array($messages) && is_string($messages)) {
+            $messages = json_decode($messages, true, JSON_UNESCAPED_UNICODE);
             $messages = is_array($messages) ? $messages : [];
-            $messageCount = count($messages);
         }
 
         $result = [
-            'id'          => $post->ID,
-            'title'       => $post->post_title ?: "Untitled Chat",
-            'userId'      => (int) $post->post_author,
-            'userName'    => get_the_author_meta('display_name', $post->post_author),
-            'createdAt'   => $post->post_date_gmt,
-            'modifiedAt'  => $post->post_modified_gmt,
+            'id'           => $post->ID,
+            'title'        => $post->post_title ?: "Untitled Chat",
+            'userId'       => (int) $post->post_author,
+            'userName'     => get_the_author_meta('display_name', $post->post_author),
+            'createdAt'    => $post->post_date_gmt,
+            'modifiedAt'   => $post->post_modified_gmt,
+            'messageCount' => count($messages),
         ];
 
         if ($includeMessages) {
             $result['messages'] = $messages;
-            $result['messageCount'] = count($messages);
-        } else {
-            $result['messageCount'] = $messageCount;
         }
 
         return $result;
     }
 
+    /**
+     * Generate a title from the first message
+     */
     private static function generateTitle(string $message): string {
         $title = substr($message, 0, 50);
         if (strlen($message) > 50) {
             $title .= "...";
         }
         return sanitize_text_field($title);
-    }
-
-    private static function buildGeminiHistory(array $messages): array {
-        $history = [];
-        
-        $messagesToProcess = array_slice($messages, 0, -1);
-        
-        foreach ($messagesToProcess as $msg) {
-            $history[] = Content::parse(part: $msg["content"], role: $msg["role"] === 'model' ? Role::MODEL : Role::USER);
-        }
-
-        return $history;
     }
 }

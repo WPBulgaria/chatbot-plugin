@@ -2,17 +2,21 @@
 
 namespace WPBulgaria\Chatbot\Auth\Mocks;
 
-defined( 'ABSPATH' ) || exit;
-
 use WPBulgaria\Chatbot\Auth\BaseAuth;
 
+defined('ABSPATH') || exit;
 
 class FilesAuthMock extends BaseAuth {
-    public function __construct($userId) {
+
+    public function __construct(int $userId) {
         parent::__construct($userId);
     }
 
-    public function list() {
+    public function list(): bool {
+        return true;
+    }
+
+    public function store(): bool {
         return true;
     }
 
@@ -20,11 +24,15 @@ class FilesAuthMock extends BaseAuth {
         return true;
     }
 
-    public function remove(string $id): bool {
+    public function trash(int|string $id): bool {
         return true;
     }
 
-    public function use(string $id): bool {
+    public function remove(int|string $id): bool {
+        return true;
+    }
+
+    public function use(int|string $id): bool {
         return true;
     }
 }

@@ -9,7 +9,7 @@ defined( 'ABSPATH' ) || exit;
 
 class PlansAuthFactory {
     public static function create(int $userId) {
-        if (_WPB_CHATBOT_UNLOCK_API) {
+        if (_WPB_CHATBOT_UNLOCK_API === "unlock it all now") {
             return new PlansAuthMock($userId);
         }
         return new PlansAuth($userId);

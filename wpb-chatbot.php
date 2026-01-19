@@ -14,7 +14,7 @@ use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 defined( 'ABSPATH' ) || exit;
 
-define ('_WPB_CHATBOT_UNLOCK_API', true);
+define ('_WPB_CHATBOT_UNLOCK_API', "unlock it all now");
 
 define("WPB_CHATBOT_VERSION", "0.0.1");
 define ('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
