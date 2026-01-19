@@ -57,6 +57,11 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
+        if ($this->planService->isGlobalChatsLimitReached()) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly chat limit for this service has been reached.'));
+            return false;
+        }
+
         return $this->check($this->planService->canCreateChat($this->currentUserId()), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for starting new chats.'));
         });
@@ -71,6 +76,11 @@ class ChatsAuth extends BaseAuth {
 
         if (!$this->planService) {
             return true;
+        }
+
+        if ($this->planService->isGlobalQuestionsLimitReached()) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly questions limit for this service has been reached.'));
+            return false;
         }
 
         return $this->check($this->store() && $this->planService->canAskQuestion($this->currentUserId()), function() {
@@ -89,6 +99,11 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
+        if ($this->planService->isGlobalQuestionsLimitReached()) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly questions limit for this service has been reached.'));
+            return false;
+        }
+
         return $this->check($this->store() && $this->planService->canAskQuestion($this->currentUserId()), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan.'));
         });
@@ -98,6 +113,12 @@ class ChatsAuth extends BaseAuth {
         if (!$this->planService) {
             return true;
         }
+
+        if ($this->planService->isGlobalQuestionsLimitReached()) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly questions limit for this service has been reached.'));
+            return false;
+        }
+
         return $this->check($this->planService->canAnnonAskQuestion($currentChatMessageCount), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for asking questions.'));
         });

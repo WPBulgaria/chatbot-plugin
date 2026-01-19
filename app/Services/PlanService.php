@@ -142,6 +142,129 @@ class PlanService {
     }
 
     /**
+     * Count ALL chats globally within the current month
+     */
+    public function countGlobalChatsThisMonth(): int {
+        $periodStart = $this->getPeriodStartDate(PlanPeriods::MONTH->value);
+
+        $args = [
+            'post_type'      => ChatModel::POST_TYPE,
+            'post_status'    => ['publish', 'trash'],
+            'date_query'     => [
+                [
+                    'after'     => $periodStart,
+                    'inclusive' => true,
+                ]
+            ],
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+        ];
+
+        $query = new \WP_Query($args);
+        return $query->found_posts;
+    }
+
+    /**
+     * Count ALL questions globally within the current month
+     */
+    public function countGlobalQuestionsThisMonth(): int {
+        $periodStart = $this->getPeriodStartDate(PlanPeriods::MONTH->value);
+
+        $args = [
+            'post_type'      => ChatModel::POST_TYPE,
+            'post_status'    => ['publish'],
+            'date_query'     => [
+                [
+                    'after'     => $periodStart,
+                    'inclusive' => true,
+                ]
+            ],
+            'posts_per_page' => -1,
+        ];
+
+        $query = new \WP_Query($args);
+        $totalQuestions = 0;
+
+        foreach ($query->posts as $post) {
+            $messages = $this->postModel->getMeta($post->ID, ChatModel::META_MESSAGES);
+            if (is_array($messages)) {
+                $userMessages = array_filter($messages, fn($msg) => ($msg['role'] ?? '') === 'user');
+                $totalQuestions += count($userMessages);
+            }
+        }
+
+        return $totalQuestions;
+    }
+
+    /**
+     * Get global monthly chat limit from configs
+     */
+    public function getGlobalChatsLimit(): int {
+        $configs = $this->configsModel->view();
+        return (int) ($configs["totalChats"] ?? 0);
+    }
+
+    /**
+     * Get global monthly questions limit from configs
+     */
+    public function getGlobalQuestionsLimit(): int {
+        $configs = $this->configsModel->view();
+        return (int) ($configs["totalQuestions"] ?? 0);
+    }
+
+    /**
+     * Check if global monthly chat limit is reached
+     */
+    public function isGlobalChatsLimitReached(): bool {
+        $limit = $this->getGlobalChatsLimit();
+
+        if ($this->isUnlimited($limit) || $limit <= 0) {
+            return false;
+        }
+
+        return $this->countGlobalChatsThisMonth() >= $limit;
+    }
+
+    /**
+     * Check if global monthly questions limit is reached
+     */
+    public function isGlobalQuestionsLimitReached(): bool {
+        $limit = $this->getGlobalQuestionsLimit();
+
+        if ($this->isUnlimited($limit) || $limit <= 0) {
+            return false;
+        }
+
+        return $this->countGlobalQuestionsThisMonth() >= $limit;
+    }
+
+    /**
+     * Get remaining global chats this month
+     */
+    public function getRemainingGlobalChats(): int {
+        $limit = $this->getGlobalChatsLimit();
+
+        if ($this->isUnlimited($limit) || $limit <= 0) {
+            return self::UNLIMITED;
+        }
+
+        return max(0, $limit - $this->countGlobalChatsThisMonth());
+    }
+
+    /**
+     * Get remaining global questions this month
+     */
+    public function getRemainingGlobalQuestions(): int {
+        $limit = $this->getGlobalQuestionsLimit();
+
+        if ($this->isUnlimited($limit) || $limit <= 0) {
+            return self::UNLIMITED;
+        }
+
+        return max(0, $limit - $this->countGlobalQuestionsThisMonth());
+    }
+
+    /**
      * Count user's questions (messages) within the plan period
      */
     public function countUserQuestionsInPeriod(int $userId, string $period): int {
@@ -312,6 +435,17 @@ class PlanService {
         $currentQuestions = $this->countUserQuestionsInPeriod($userId, $period);
 
         return max(0, $totalQuestions - $currentQuestions);
+    }
+
+    public function getGlobalUsageSummary(): array {
+        return [
+            'globalChatsUsed'          => $this->countGlobalChatsThisMonth(),
+            'globalChatsTotal'         => $this->getGlobalChatsLimit(),
+            'globalChatsRemaining'     => $this->getRemainingGlobalChats(),
+            'globalQuestionsUsed'      => $this->countGlobalQuestionsThisMonth(),
+            'globalQuestionsTotal'     => $this->getGlobalQuestionsLimit(),
+            'globalQuestionsRemaining' => $this->getRemainingGlobalQuestions(),
+        ];
     }
 
     /**

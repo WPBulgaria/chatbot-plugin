@@ -4,12 +4,13 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 ?>
 
 <div id="wp-chatbot-admin-container"></div>
-<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-Xw5HNufD.js", ); ?>"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-DyAZnEc3.js", ); ?>"></script>
 <script>
+    
     window.wpbChatbotConfig = {
-        root: "<?php echo esc_url_raw( rest_url() ); ?>",
-        nonce: "<?php echo wp_create_nonce( 'wp_rest' ); ?>"
-    };
+            root: "<?php echo esc_url_raw( rest_url() ); ?>",
+            nonce: "<?php echo wp_create_nonce( 'wp_rest' ); ?>"
+        };
 
     jQuery(document).ready(function($) {
         $("#wp-chatbot-admin-container").on("keyup", function(event) {
@@ -20,6 +21,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
             event.stopPropagation();
         })
 
+
         /**
         let link = document.createElement("link");
         link.setAttribute("rel", "stylesheet");
@@ -29,7 +31,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 
         let bodyLink = document.createElement("link");
         bodyLink.setAttribute("rel", "stylesheet");
-        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/admin/assets/index-YQczj20e.css"); ?>');
+        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/admin/assets/index-B54ZwsF9.css"); ?>');
         document.body.prepend(bodyLink);
 
         /**

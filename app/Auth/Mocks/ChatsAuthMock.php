@@ -57,6 +57,10 @@ class ChatsAuthMock extends BaseAuthMock {
         ];
     }
 
+    public function canAnnonAskQuestion(int $currentChatMessageCount): bool {
+        return true;
+    }
+
     public function getHistorySize(): int {
         return -1;
     }

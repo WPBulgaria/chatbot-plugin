@@ -4,7 +4,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 ?>
 
 <div id="wp-chatbot-chat-container"></div>
-<script type="module" src="<?php echo esc_url($plugin_url . "/assets/chat/assets/index-BSIrv67b.js", ); ?>"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . "/assets/chat/assets/index-CEnxsBS0.js", ); ?>"></script>
 <script>
     
     window.wpbChatbotConfig = {
@@ -24,7 +24,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 
         let bodyLink = document.createElement("link");
         bodyLink.setAttribute("rel", "stylesheet");
-        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/chat/assets/index-DvhKTwQN.css"); ?>');
+        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/chat/assets/index-BCTOb0vQ.css"); ?>');
         document.body.prepend(bodyLink);
     });
 </script>
