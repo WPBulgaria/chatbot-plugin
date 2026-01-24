@@ -8,14 +8,19 @@ Author: Sashe Vuchkov
 Version: 0.0.2
 Author URI: https://wpbulgaria.com
 Text Domain: wpbulgaria-chatbot
+
+Requires at least: 6.9
+Tested up to: 6.9
+Requires PHP: 8.4
+
 **/
 
 defined('ABSPATH') || exit;
 
 // Constants
 
-define('_WPB_CHATBOT_DEBUG', true);
-define('_WPB_CHATBOT_UNLOCK_API', "!!!unlock it all now");
+define('_WPB_CHATBOT_DEBUG', false);
+define('_WPB_CHATBOT_UNLOCK_API', false);
 define('WPB_CHATBOT_VERSION', '0.0.3');
 define('WPB_CHATBOT_URL', plugin_dir_url(__FILE__));
 define('WPB_CHATBOT_DIR', __DIR__);
