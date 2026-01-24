@@ -22,6 +22,10 @@ class ConfigsValidator extends BaseValidator {
             "modifiedAt" => fn($data) => !$data || validateDate($data),
             "systemInstructions" => fn($data) => !$data || is_string($data),
             "chatTheme" => fn($data) => !$data || is_array($data),
+            "temperature" => fn($data) => is_numeric($data) && $data >= 0 && $data <= 2,
+            "maxOutputTokens" => fn($data) => is_int($data) && $data > 0 && $data <= 65000,
+            "topP" => fn($data) => is_numeric($data) && $data >= 0 && $data <= 1,
+            "topK" => fn($data) => is_int($data) && $data > 0 && $data <= 100,
 
         ];
     }

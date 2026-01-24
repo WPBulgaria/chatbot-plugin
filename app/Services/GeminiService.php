@@ -132,15 +132,16 @@ class GeminiService {
         }
 
         $model = $client->generativeModel($this->getModelName());
+        $configs = $this->getConfigs();
 
         // Add generation config for streaming
         if ($withGenerationConfig) {
             $generateConfig = new GenerationConfig(
-                temperature: 0.1,
-                maxOutputTokens: 800,
-                topP: 0.8,
-                topK: 20,
-                stopSequences: [],
+                temperature: $configs["temperature"] ?? 0.1,
+                maxOutputTokens: $configs["maxOutputTokens"] ?? 800,
+                topP: $configs["topP"] ?? 0.8,
+                topK: $configs["topK"] ?? 20,
+                stopSequences: $configs["stopSequences"] ?? [],
             );
             $model->withGenerationConfig($generateConfig);
         }

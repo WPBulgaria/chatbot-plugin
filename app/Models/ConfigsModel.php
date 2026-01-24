@@ -24,6 +24,11 @@ class ConfigsModel {
         "modifiedAt" => "",
         "systemInstruction" => "",
         "chatTheme" => "",
+        "temperature" => 0.1,
+        "maxOutputTokens" => 800,
+        "topP" => 0.8,
+        "topK" => 20,
+        "stopSequences" => [],
     ];
 
     protected OptionModel $optionModel;

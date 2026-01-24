@@ -4,7 +4,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 ?>
 
 <div id="wp-chatbot-admin-container"></div>
-<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-DyAZnEc3.js", ); ?>"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-C2M8897i.js", ); ?>"></script>
 <script>
     
     window.wpbChatbotConfig = {
