@@ -35,9 +35,9 @@ require_once WPB_CHATBOT_DIR . '/post-types/chat.php';
 require_once WPB_CHATBOT_DIR . '/app/Api/Api.php';
 require_once WPB_CHATBOT_DIR . '/hooks/attachments.php';
 require_once WPB_CHATBOT_DIR . '/hooks/users.php';
+require_once WPB_CHATBOT_DIR . '/hooks/shortcode.php';
 
 use WPBulgaria\Chatbot\Application;
-use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 /**
  * Bootstrap the application
@@ -83,25 +83,6 @@ add_action('admin_menu', function (): void {
     );
 });
 
-/**
- * Chatbot shortcode
- */
-function wpbulgaria_chatbot_shortcode(array $atts = [], ?string $content = null): string {
-    $configs = wpb_chatbot_resolve(ConfigsModel::class)->view(true);
-    $chatTheme = isset($configs["chatTheme"]) && is_array($configs["chatTheme"]) ? : "null";
-
-    ob_start();
-    $template_file = WPB_CHATBOT_DIR . '/assets/chat/template.php';
-
-    if (file_exists($template_file)) {
-        include $template_file;
-    } else {
-        echo esc_html__('Chatbot template not found.', 'wpbulgaria-chatbot');
-    }
-
-    return ob_get_clean();
-}
-add_shortcode('wpbulgaria_chatbot', 'wpbulgaria_chatbot_shortcode');
 
 /**
  * Plugin activation hook
