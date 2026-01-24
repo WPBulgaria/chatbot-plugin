@@ -34,6 +34,7 @@ require_once WPB_CHATBOT_DIR . '/functions.php';
 require_once WPB_CHATBOT_DIR . '/post-types/chat.php';
 require_once WPB_CHATBOT_DIR . '/app/Api/Api.php';
 require_once WPB_CHATBOT_DIR . '/hooks/attachments.php';
+require_once WPB_CHATBOT_DIR . '/hooks/users.php';
 
 use WPBulgaria\Chatbot\Application;
 use WPBulgaria\Chatbot\Models\ConfigsModel;
