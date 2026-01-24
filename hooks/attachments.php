@@ -1,7 +1,7 @@
 <?php
 
 use WPBulgaria\Chatbot\Models\SearchFileModel;
-use function wpb_chatbot_app;
+
 function wpdocs_delete_attachment( $post_id ) {
 	// Do something before attachment deleted
 
