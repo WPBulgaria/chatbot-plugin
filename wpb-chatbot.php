@@ -37,6 +37,7 @@ require_once WPB_CHATBOT_DIR . '/app/helpers.php';
 // Legacy includes (to be refactored)
 require_once WPB_CHATBOT_DIR . '/functions.php';
 require_once WPB_CHATBOT_DIR . '/post-types/chat.php';
+require_once WPB_CHATBOT_DIR . '/post-types/chatbot.php';
 require_once WPB_CHATBOT_DIR . '/app/Api/Api.php';
 require_once WPB_CHATBOT_DIR . '/hooks/attachments.php';
 require_once WPB_CHATBOT_DIR . '/hooks/users.php';
@@ -94,7 +95,9 @@ add_action('admin_menu', function (): void {
  */
 register_activation_hook(__FILE__, 'wpbulgaria_chatbot_install');
 function wpbulgaria_chatbot_install(): void {
-    global $wp_rewrite;
-    $wp_rewrite->flush_rules();
-    add_option( 'wpbulgaria_chatbot_db_version', 1);   
+    require_once WPB_CHATBOT_DIR . '/post-types/chat.php';
+    require_once WPB_CHATBOT_DIR . '/post-types/chatbot.php';
+    
+    flush_rewrite_rules();
+    add_option('wpbulgaria_chatbot_db_version', 1);
 }
