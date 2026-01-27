@@ -18,6 +18,23 @@ add_action( 'rest_api_init', function () {
     ) );
 });
 
+
+// GET /chats - List all chats
+add_action( 'rest_api_init', function () {
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats', array(
+        'methods' => 'GET',
+        'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
+        'permission_callback' => function ($request) {
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->list((int) $request->get_param('user_id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
+        }
+    ) );
+});
+
 // GET /chats/{id} - Get specific chat
 add_action( 'rest_api_init', function () {
     register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/(?P<id>\d+)', array(

@@ -11,14 +11,14 @@ class PlanModel {
     const OPTIONS_KEY = "wpb_chatbot_plans";
     const USER_PLAN_META_KEY = "wpb_chatbot_user_plan";
 
-    protected OptionModel $optionModel;
+    protected PostModel $postModel;
 
-    public function __construct(OptionModel $optionModel) {
-        $this->optionModel = $optionModel;
+    public function __construct(PostModel $postModel) {
+        $this->postModel = $postModel;
     }
 
-    public function list(): array {
-        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
+    public function list(int|string $chatbotId): array {
+        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
         if (empty($plans)) {
             return [];
         }
@@ -29,12 +29,12 @@ class PlanModel {
     /**
      * Get a plan by ID
      */
-    public function get(string $id): ?array {
+    public function get(int|string $chatbotId, string $id): ?array {
         if (empty($id)) {
             return null;
         }
 
-        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
+        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
         if (empty($plans)) {
             return null;
         }
@@ -48,31 +48,62 @@ class PlanModel {
         return null;
     }
 
+    public function getUserPlans(int|string $userId): array {
+        if ($userId <= 0) {
+            return [];
+        }
+
+        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?? [];
+        return $planIds;
+    }
+
     /**
      * Get user's assigned plan ID from user meta
      */
-    public function getUserPlanId(int $userId): ?string {
+    public function getUserPlanId(int|string $chatbotId, int|string $userId): ?string {
         if ($userId <= 0) {
             return null;
         }
 
-        $planId = get_user_meta($userId, self::USER_PLAN_META_KEY, true);
-        return !empty($planId) ? $planId : null;
+        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?? [];
+
+        if (empty($planIds)) {
+            return null;
+        }
+
+        foreach ($planIds as $planId) {
+            if ($planId["chatbotId"] === $chatbotId) {
+                return $planId["planId"];
+            }
+        }
+
+        return null;
     }
 
     /**
      * Set user's plan ID in user meta
      */
-    public function setUserPlan(int $userId, string $planId): bool {
+    public function setUserPlan(int|string $chatbotId, int|string $userId, string $planId): bool {
         if ($userId <= 0) {
             return false;
+        }   
+
+        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?? [];
+
+        if (empty($planIds)) {
+            $planIds = [];
         }
 
-        return (bool) update_user_meta($userId, self::USER_PLAN_META_KEY, $planId);
+        $planIds[] = [
+            "chatbotId" => $chatbotId,
+            "planId" => $planId,
+        ];
+
+        return (bool) update_user_meta($userId, self::USER_PLAN_META_KEY, $planIds);
     }
 
-    public function store(array $doc) {
-        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
+    public function store(int|string $chatbotId, array $doc) {
+        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
         if (empty($doc)) {
             return [];
         }
@@ -100,24 +131,24 @@ class PlanModel {
             }
         }
 
-        $this->optionModel->update(self::OPTIONS_KEY, $plans);
+        $this->postModel->updateMeta($chatbotId, self::OPTIONS_KEY, $plans);
         return $id;
     }
 
-    public function trash(string $id) {
-        $plans = $this->optionModel->get(self::OPTIONS_KEY, []);
+    public function trash(int $chatbotId, string $id) {
+        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
         if (empty($plans)) {
             return [];
         }
 
-        foreach ($plans as $key => $plan) {
+        foreach ($plans as $key => $plan) { 
             if ($plan["id"] === $id) {
                 $plans[$key]["removedAt"] = date(DATE_ATOM);
                 break;
             }
         }
 
-        $this->optionModel->update(self::OPTIONS_KEY, $plans);
+        $this->postModel->updateMeta($chatbotId, self::OPTIONS_KEY, $plans);
         return true;
     }
 

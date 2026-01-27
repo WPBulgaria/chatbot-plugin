@@ -2,6 +2,8 @@
 
 namespace WPBulgaria\Chatbot\Models;
 
+use WPBulgaria\Chatbot\Models\ChatbotModel;
+
 defined('ABSPATH') || exit;
 
 /**
@@ -10,7 +12,7 @@ defined('ABSPATH') || exit;
  */
 class ConfigsModel {
 
-    const OPTIONS_KEY = "wpb_chatbot_configs";
+    const OPTIONS_KEY = ChatbotModel::META_CONFIG;
     const KEY_MASK = "🔒";
 
     const DEFAULT_CONFIGS = [
@@ -29,12 +31,14 @@ class ConfigsModel {
         "topP" => 0.8,
         "topK" => 20,
         "stopSequences" => [],
+        "windowSize" => 10,
     ];
 
-    protected OptionModel $optionModel;
 
-    public function __construct(OptionModel $optionModel) {
-        $this->optionModel = $optionModel;
+    protected PostModel $postModel;
+
+    public function __construct(PostModel $postModel) {
+        $this->postModel = $postModel;
     }
 
     /**
@@ -45,19 +49,15 @@ class ConfigsModel {
     /**
      * Get config (instance method for DI)
      */
-    public function view(bool $secure = false): array {
+    public function view(int|string $chatbotId, bool $secure = false): array {
         if ($this->cachedConfig === null || $secure) {
-            $configs = $this->optionModel->get(self::OPTIONS_KEY, []);
+            $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY);
 
-            if (empty($configs)) {
-                return self::DEFAULT_CONFIGS;
-            }
-    
-            if ($secure) {
+            if ($secure && is_array($configs)) {
                 $configs["apiKey"] = self::KEY_MASK;
             }
 
-            $this->cachedConfig = $configs;
+            $this->cachedConfig = is_array($configs) ? $configs : [$configs];
         }
         return $this->cachedConfig;
     }
@@ -65,25 +65,21 @@ class ConfigsModel {
     /**
      * Save config (instance method for DI)
      */
-    public function store(array $doc): bool {
-        $configs = $this->optionModel->get(self::OPTIONS_KEY, []);
+    public function store(int|string $chatbotId, array $doc): bool {
+        $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
 
         if (empty($configs)) {
-            $configs = self::DEFAULT_CONFIGS;
-            $configs["modifiedAt"] = date(DATE_ATOM);
-        } else {
-            $configs["modifiedAt"] = date(DATE_ATOM);
+            $configs = [];
         }
 
-        if (isset($doc["apiKey"]) && $doc["apiKey"] === self::KEY_MASK) {
+        if (isset($doc["apiKey"]) && !empty($doc["apiKey"]) && $doc["apiKey"] === self::KEY_MASK) {
             $doc["apiKey"] = $configs["apiKey"] ?? "";
         }
 
         $newDoc = array_merge($configs, $doc);
-        $this->optionModel->update(self::OPTIONS_KEY, $newDoc);
+        $normalizedDoc = $this->normalizeConfig($newDoc);
 
-
-
+        $this->postModel->updateMeta($chatbotId, self::OPTIONS_KEY, $normalizedDoc);
         $this->cachedConfig = null; // Clear cache
         return true;
     }
@@ -93,5 +89,13 @@ class ConfigsModel {
      */
     public function clearCache(): void {
         $this->cachedConfig = null;
+    }
+
+    
+    /**
+     * Normalize config with defaults
+     */
+    private function normalizeConfig(array $config): array {
+        return array_merge(self::DEFAULT_CONFIGS, $config);
     }
 }

@@ -14,12 +14,14 @@ class ChatModel extends BaseModel {
     protected GeminiService $geminiService;
     protected PostModel $postModel;
     protected AuthInterface $auth;
+    protected ChatbotModel $chatbotModel;
 
-    public function __construct(GeminiService $geminiService, PostModel $postModel, AuthInterface $auth) {
+    public function __construct(GeminiService $geminiService, PostModel $postModel, AuthInterface $auth, ChatbotModel $chatbotModel) {
         parent::__construct();
         $this->geminiService = $geminiService;
         $this->postModel = $postModel;
         $this->auth = $auth;
+        $this->chatbotModel = $chatbotModel;
     }
 
     /**
@@ -69,7 +71,7 @@ class ChatModel extends BaseModel {
     /**
      * List chats with pagination
      */
-    public function list(int $userId = 0, int $perPage = 20, int $page = 1): array {
+    public function list(int $userId = 0, int $perPage = 20, int $page = 1, int $chatbotId = 0): array {
         $args = [
             'post_type'      => self::POST_TYPE,
             'post_status'    => 'publish',
@@ -78,6 +80,10 @@ class ChatModel extends BaseModel {
             'orderby'        => 'date',
             'order'          => 'DESC',
         ];
+
+        if ($chatbotId > 0) {
+            $args['post_parent'] = $chatbotId;
+        }
 
         if ($userId > 0 && $this->auth->currentUserCan('edit_others_posts')) {
             $args['author'] = $userId;
@@ -115,7 +121,8 @@ class ChatModel extends BaseModel {
     /**
      * Stream chat response via SSE
      */
-    public function stream(string $message, ?int $chatId = null, ?int $userId = null): array {
+    public function stream(int $chatbotId, string $message, ?int $chatId = null, ?int $userId = null): array {
+        $this->geminiService->setChatbotId($chatbotId);
         $context = $this->prepareChat($chatId, $userId);
 
         /** @var GeminiService $geminiService */
@@ -134,11 +141,11 @@ class ChatModel extends BaseModel {
         $streamChatId = $chatId;
         if ($isNewChat) {
             $title = $this->generateTitle($message);
-            $streamChatId = $this->create($title, $messages, $contextUserId);
+            $streamChatId = $this->create($chatbotId, $title, $messages, $contextUserId);
         }
 
         $this->addUserMessage($messages, $message);
-        $history = $geminiService->buildHistory($messages);
+        $history = $geminiService->buildHistory($messages, ['windowSize' => $context['configs']['windowSize'] ?? 10]);
 
         try {
             $responseText = $geminiService->streamMessage(
@@ -174,8 +181,9 @@ class ChatModel extends BaseModel {
     /**
      * Send chat message and get response
      */
-    public function chat(string $message, ?int $chatId = null, ?int $userId = null): array {
-        $context = $this->prepareChat($chatId, $userId);
+    public function chat(int $chatbotId, string $message, ?int $chatId = null, ?int $userId = null): array {
+        $this->geminiService->setChatbotId($chatbotId);
+        $context = $this->prepareChat($chatbotId, $chatId, $userId);
 
         /** @var GeminiService $geminiService */
         $geminiService = $context['geminiService'];
@@ -200,7 +208,7 @@ class ChatModel extends BaseModel {
             $resultChatId = $chatId;
             if ($isNewChat) {
                 $title = $this->generateTitle($message);
-                $resultChatId = $this->create($title, $messages, $contextUserId);
+                $resultChatId = $this->create($chatbotId, $title, $messages, $contextUserId);
             } else {
                 $this->updateMessages($chatId, $messages);
                 $title = $chat['title'] ?? '';
@@ -220,7 +228,7 @@ class ChatModel extends BaseModel {
     /**
      * Create a new chat
      */
-    public function create(string $title, array $messages = [], int $userId = 0): int {
+    public function create(int $chatbotId, string $title, array $messages = [], int $userId = 0): int {
         $userId = $userId ?: $this->auth->currentUserId();
 
         $postId = $this->postModel->insert([
@@ -228,6 +236,7 @@ class ChatModel extends BaseModel {
             'post_title'  => sanitize_text_field($title),
             'post_status' => 'publish',
             'post_author' => $userId,
+            'post_parent' => $chatbotId,
         ], true);
 
         if (is_wp_error($postId)) {
@@ -370,6 +379,7 @@ class ChatModel extends BaseModel {
             'createdAt'    => $post->post_date_gmt,
             'modifiedAt'   => $post->post_modified_gmt,
             'messageCount' => count($messages),
+            'chatbotId'    => (int) $post->post_parent,
         ];
 
         if ($includeMessages) {

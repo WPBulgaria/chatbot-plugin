@@ -47,17 +47,6 @@ add_action('rest_api_init', function () {
     ));
 });
 
-// PATCH /chatbots/{id}/config - Update chatbot config
-add_action('rest_api_init', function () {
-    register_rest_route(WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<id>\d+)/config', array(
-        'methods'             => 'PATCH',
-        'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::updateConfig',
-        'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->updateConfig($request->get_param('id'));
-        }
-    ));
-});
-
 // DELETE /chatbots/{id} - Trash chatbot (soft delete)
 add_action('rest_api_init', function () {
     register_rest_route(WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<id>\d+)', array(

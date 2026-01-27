@@ -62,7 +62,7 @@ class AppServiceProvider extends ServiceProvider {
 
         // Register ConfigsModel as singleton (config doesn't change during request)
         $container->singleton(ConfigsModel::class, function ($c) {
-            return new ConfigsModel($c->make(OptionModel::class));
+            return new ConfigsModel($c->make(PostModel::class));
         });
 
         // Register PostModel as singleton
@@ -72,12 +72,12 @@ class AppServiceProvider extends ServiceProvider {
 
         // Register ChatModel as singleton
         $container->singleton(ChatModel::class, function ($c) {
-            return new ChatModel($c->make(GeminiService::class), $c->make(PostModel::class), $c->make(ChatsAuthFactory::class));
+            return new ChatModel($c->make(GeminiService::class), $c->make(PostModel::class), $c->make(ChatsAuthFactory::class), $c->make(ChatbotModel::class));
         });
 
         // Register ChatbotModel as singleton
         $container->singleton(ChatbotModel::class, function ($c) {
-            return new ChatbotModel($c->make(PostModel::class));
+            return new ChatbotModel($c->make(PostModel::class), $c->make(ConfigsModel::class));
         });
         
         // Register ChatsAuth as singleton

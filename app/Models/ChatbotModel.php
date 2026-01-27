@@ -9,11 +9,14 @@ class ChatbotModel extends BaseModel {
     const POST_TYPE = 'wpb_chatbot';
     const META_CONFIG = '_wpb_chatbot_config';
 
-    protected PostModel $postModel;
 
-    public function __construct(PostModel $postModel) {
+    protected PostModel $postModel;
+    protected ConfigsModel $configsModel;
+
+    public function __construct(PostModel $postModel, ConfigsModel $configsModel) {
         parent::__construct();
         $this->postModel = $postModel;
+        $this->configsModel = $configsModel;
     }
 
     /**
@@ -59,28 +62,8 @@ class ChatbotModel extends BaseModel {
     /**
      * Get chatbot config
      */
-    public function getConfig(int $id): array {
-        $config = $this->postModel->getMeta($id, self::META_CONFIG);
-        
-        if (!is_array($config) && is_string($config)) {
-            $config = json_decode($config, true, JSON_UNESCAPED_UNICODE);
-            $config = is_array($config) ? $config : [];
-        }
-        
-        return $this->normalizeConfig($config);
-    }
-
-    /**
-     * Normalize config with defaults
-     */
-    private function normalizeConfig(array $config): array {
-        return array_merge([
-            'model'         => 'gemini-2.0-flash-exp',
-            'systemPrompt'  => '',
-            'temperature'   => 0.7,
-            'maxTokens'     => 8192,
-            'isActive'      => false,
-        ], $config);
+    public function getConfig(int|string $id): array {
+        return $this->configsModel->view($id, true);
     }
 
     /**
@@ -98,7 +81,7 @@ class ChatbotModel extends BaseModel {
             throw new \Exception("Failed to create chatbot: " . $postId->get_error_message(), 500);
         }
 
-        $this->updateConfig($postId, $data['config'] ?? []);
+        $this->configsModel->store($postId, $data['config'] ?? []);
 
         return $postId;
     }
@@ -130,26 +113,8 @@ class ChatbotModel extends BaseModel {
         }
 
         if (isset($data['config'])) {
-            $this->updateConfig($id, $data['config']);
+            $this->configsModel->store($id, $data['config']);
         }
-
-        return true;
-    }
-
-    /**
-     * Update chatbot config
-     */
-    public function updateConfig(int $id, array $config): bool {
-        $post = get_post($id);
-
-        if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chatbot not found", 404);
-        }
-
-        $currentConfig = $this->getConfig($id);
-        $newConfig = array_merge($currentConfig, $config);
-
-        $this->postModel->updateMeta($id, self::META_CONFIG, $newConfig);
 
         return true;
     }
@@ -221,9 +186,10 @@ class ChatbotModel extends BaseModel {
             'id'          => $post->ID,
             'title'       => $post->post_title ?: "Untitled Chatbot",
             'description' => $post->post_content,
-            'createdAt'   => $post->post_date_gmt,
-            'modifiedAt'  => $post->post_modified_gmt,
+            'createdAt'   => date('Y-m-d H:i:s', strtotime($post->post_date_gmt)),
+            'modifiedAt'  => date('Y-m-d H:i:s', strtotime($post->post_modified_gmt)),
             'config'      => $config,
+            'status'      => $post->post_status,
         ];
     }
 }

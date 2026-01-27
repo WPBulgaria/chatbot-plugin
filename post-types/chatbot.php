@@ -1,6 +1,7 @@
 <?php
 
 use WPBulgaria\Chatbot\Models\ChatbotModel;
+use WPBulgaria\Chatbot\Validators\Configs\ConfigsValidator;
 
 defined('ABSPATH') || exit;
 
@@ -42,10 +43,13 @@ add_action('init', function() {
         'single'            => true,
         'show_in_rest'      => false,
         'sanitize_callback' => function($value) {
-            if (is_array($value)) {
-                return wp_json_encode($value);
+            $validator = ConfigsValidator::make();
+
+            if ($validator->isValid($value)) {
+                return $validator->getCleanData($value);
             }
-            return $value;
+
+           return [];
         },
     ]);
 });

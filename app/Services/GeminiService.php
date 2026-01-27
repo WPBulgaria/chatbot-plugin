@@ -8,8 +8,8 @@ use Gemini\Data\FileSearch;
 use Gemini\Data\Tool;
 use Gemini\Data\GenerationConfig;
 use Gemini\Enums\Role;
-use WPBulgaria\Chatbot\Models\ConfigsModel;
 use WPBulgaria\Chatbot\Models\SearchFileModel;
+use WPBulgaria\Chatbot\Models\ChatbotModel;
 
 defined('ABSPATH') || exit;
 
@@ -19,14 +19,26 @@ defined('ABSPATH') || exit;
 class GeminiService {
 
     private ?object $client = null;
-    private ConfigsModel $configsModel;
     private ?array $configs = null;
+    private ChatbotModel $chatbotModel;
+    private ?int $chatbotId = null;
 
     /**
      * Constructor with dependency injection
      */
-    public function __construct(ConfigsModel $configsModel) {
-        $this->configsModel = $configsModel;
+    public function __construct(ChatbotModel $chatbotModel) {
+        $this->chatbotModel = $chatbotModel;
+    }
+
+    public function setChatbotId(int $chatbotId): void {
+        $this->chatbotId = $chatbotId;
+    }
+
+    public function getChatbotId(): ?int {
+        if ($this->chatbotId === null) {
+            throw new \Exception("Chatbot ID not set");
+        }
+        return $this->chatbotId;
     }
 
     /**
@@ -34,7 +46,7 @@ class GeminiService {
      */
     protected function getConfigs(): array {
         if ($this->configs === null) {
-            $this->configs = $this->configsModel->view();
+            $this->configs = $this->chatbotModel->getConfig($this->getChatbotId());
         }
         return $this->configs;
     }
@@ -61,6 +73,11 @@ class GeminiService {
      * Check if the service is configured
      */
     public function isConfigured(): bool {
+
+        if ($this->chatbotId === null) {
+            return false;
+        }
+
         $configs = $this->getConfigs();
         return !empty($configs["apiKey"]);
     }
@@ -173,9 +190,20 @@ class GeminiService {
     /**
      * Build chat history for Gemini from messages array
      */
-    public function buildHistory(array $messages): array {
+    public function buildHistory(array $messages, array $config = []): array {
         $history = [];
         $messagesToProcess = array_slice($messages, 0, -1);
+
+        if (!empty($config['windowSize'])) {
+            $messagesToProcess = array_slice($messagesToProcess, -$config['windowSize']);
+
+            if (count($messages) > $config['windowSize']) {
+                $initialUserInput = $messages[0];
+                $initialUserInput["content"] = "initial user input: ".$initialUserInput["content"];
+                $messagesToProcess = array_unshift($messagesToProcess, $initialUserInput);
+            }
+        }
+
 
         foreach ($messagesToProcess as $msg) {
             $history[] = Content::parse(

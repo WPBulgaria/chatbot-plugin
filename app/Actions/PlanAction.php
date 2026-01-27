@@ -9,14 +9,24 @@ defined( 'ABSPATH' ) || exit;
 
 class PlanAction {
 
-    static function list() {
-        $result = wpb_chatbot_app(PlanModel::class)->list();
+    static function list(\WP_REST_Request $request) {
+        $chatbotId = $request->get_param('chatbot_id');
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
+        }
+
+        $result = wpb_chatbot_app(PlanModel::class)->list($chatbotId);
         return new \WP_REST_Response($result, 200);
     }
 
     static function trash(\WP_REST_Request $request) {
         $data = $request->get_params();
         $id = sanitize_key( $data['id'] );
+        $chatbotId = $request->get_param('chatbot_id');
+
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
+        }
 
         $validator = PlanValidator::make();
         if (!$validator->isValidField("id", $id)) {
@@ -28,7 +38,7 @@ class PlanAction {
         }
 
         try {
-            wpb_chatbot_app(PlanModel::class)->trash($id);
+            wpb_chatbot_app(PlanModel::class)->trash($chatbotId, $id);
             return new \WP_REST_Response(["success" => true], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());
@@ -38,11 +48,16 @@ class PlanAction {
 
     static function store(\WP_REST_Request $request) {
         $urlParams = $request->get_url_params();
+        $chatbotId = $request->get_param('chatbot_id');
         //Validate doc
         $doc = $request->get_json_params();
 
         if (!is_array($doc)) {  
             return new \WP_REST_Response(["success" => false, "message" => "invalid data"], 400);
+        }
+
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
         }
 
         try {
@@ -53,7 +68,7 @@ class PlanAction {
             }
 
             $cleanDoc = $validator->getCleanData($doc);
-            $id = wpb_chatbot_app(PlanModel::class)->store($cleanDoc, $urlParams["id"] ?? null);
+            $id = wpb_chatbot_app(PlanModel::class)->store($chatbotId, $cleanDoc, $urlParams["id"] ?? null);
             return new \WP_REST_Response(["success" => true, "plan" => $id], 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());
