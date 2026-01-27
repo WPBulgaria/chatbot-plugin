@@ -31,7 +31,11 @@ class ChatAction {
         $page = isset($params['page']) ? absint($params['page']) : 1;
         $userId = isset($params['user_id']) ? absint($params['user_id']) : 0;
 
-        $result = wpb_chatbot_app(ChatModel::class)->list($userId, $perPage, $page);
+
+        $urlParams = $request->get_url_params();
+        $chatbotId = isset($urlParams['chatbot_id']) ? absint($urlParams['chatbot_id']) : 0;
+
+        $result = wpb_chatbot_app(ChatModel::class)->list($userId, $perPage, $page, $chatbotId);
 
         return new \WP_REST_Response([
             "success" => true,

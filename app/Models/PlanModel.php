@@ -103,7 +103,7 @@ class PlanModel {
     }
 
     public function store(int|string $chatbotId, array $doc) {
-        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
+        $plans = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?: [];
         if (empty($doc)) {
             return [];
         }

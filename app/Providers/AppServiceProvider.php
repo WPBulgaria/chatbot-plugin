@@ -52,7 +52,7 @@ class AppServiceProvider extends ServiceProvider {
 
         // Register PlanModel as singleton
         $container->singleton(PlanModel::class, function ($c) {
-            return new PlanModel($c->make(OptionModel::class));
+            return new PlanModel($c->make(PostModel::class));
         });
 
         // Register SearchFileModel as singleton
@@ -121,7 +121,7 @@ class AppServiceProvider extends ServiceProvider {
         // Register GeminiService as singleton
         $container->singleton(GeminiService::class, function ($c) {
             return new GeminiService(
-                $c->make(ConfigsModel::class)
+                $c->make(ChatbotModel::class),
             );
         });
 

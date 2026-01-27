@@ -9,10 +9,16 @@ defined( 'ABSPATH' ) || exit;
 
 class ConfigsAction {
 
-    static function view() {
+    static function view(\WP_REST_Request $request) {
         try {
-            $configs = wpb_chatbot_resolve(ConfigsModel::class)->view(true);
-            return new \WP_REST_Response($configs, 200);
+            $chatbotId = $request->get_param('chatbot_id');
+
+            if (empty($chatbotId)) {
+                return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
+            }
+
+            $configs = wpb_chatbot_resolve(ConfigsModel::class)->view($chatbotId, true);
+            return new \WP_REST_Response(["configs" => $configs, "success" => true], 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], 500);
         }   
@@ -20,9 +26,10 @@ class ConfigsAction {
 
     static function store(\WP_REST_Request $request) {
         $doc = $request->get_json_params();
+        $chatbotId = $request->get_param('chatbot_id');
 
-        if (!is_array($doc)) {  
-            return new \WP_REST_Response(["success" => false, "message" => "invalid data"], 400);
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
         }
 
         try {
@@ -33,7 +40,7 @@ class ConfigsAction {
             }
 
             $cleanDoc = $validator->getCleanData($doc);
-            wpb_chatbot_resolve(ConfigsModel::class)->store($cleanDoc);
+            wpb_chatbot_resolve(ConfigsModel::class)->store($chatbotId,$cleanDoc);
             return new \WP_REST_Response(["success" => true], 200);
         } catch ( \Exception $e ) {
             return new \WP_REST_Response(["success" => false, "message" => "Internal server error"], $e->getCode());

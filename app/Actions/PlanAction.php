@@ -16,7 +16,7 @@ class PlanAction {
         }
 
         $result = wpb_chatbot_app(PlanModel::class)->list($chatbotId);
-        return new \WP_REST_Response($result, 200);
+        return new \WP_REST_Response(["plans" => $result, "success" => true], 200);
     }
 
     static function trash(\WP_REST_Request $request) {

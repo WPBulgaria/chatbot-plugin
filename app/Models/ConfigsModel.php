@@ -66,11 +66,8 @@ class ConfigsModel {
      * Save config (instance method for DI)
      */
     public function store(int|string $chatbotId, array $doc): bool {
-        $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?? [];
+        $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY) ?: [];
 
-        if (empty($configs)) {
-            $configs = [];
-        }
 
         if (isset($doc["apiKey"]) && !empty($doc["apiKey"]) && $doc["apiKey"] === self::KEY_MASK) {
             $doc["apiKey"] = $configs["apiKey"] ?? "";
