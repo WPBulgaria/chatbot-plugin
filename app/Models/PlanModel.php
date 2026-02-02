@@ -65,9 +65,9 @@ class PlanModel {
             return null;
         }
 
-        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?? [];
+        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?: [];
 
-        if (empty($planIds)) {
+        if (empty($planIds) || !is_array($planIds)) {
             return null;
         }
 

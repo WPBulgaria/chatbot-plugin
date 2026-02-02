@@ -27,7 +27,8 @@ class SearchFileModel {
     }   
 
     public function upload(\WP_Post $attachment) {
-        $configs = $this->configsModel->view();
+        $this->geminiService->setChatbotId($attachment->post_parent);
+        $configs = $this->geminiService->getConfigs();
     
         if (empty($configs["fileSearchStore"])) {
             throw new \Exception("File Search Store not configured");
@@ -51,8 +52,9 @@ class SearchFileModel {
         return $response->documentName;
     }
 
-    public function remove(string $guid) {
-        $configs = $this->configsModel->view();
+    public function remove(string $guid, int|string $chatbotId) {
+        $this->geminiService->setChatbotId($chatbotId);
+        $configs = $this->geminiService->getConfigs();
     
         if (empty($configs["fileSearchStore"])) {
             throw new \Exception("File Search Store not configured");

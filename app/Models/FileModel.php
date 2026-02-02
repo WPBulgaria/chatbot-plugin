@@ -16,7 +16,7 @@ class FileModel {
     ];
     const MAX_FILE_SIZE = 10485760; // 10MB
 
-    public function list(int $per_page = 20, int $page = 1): array {
+    public function list(int|string $chatbotId, int $per_page = 20, int $page = 1): array {
         $args = [
             'post_type'      => 'attachment',
             'post_status'    => 'inherit',
@@ -24,6 +24,7 @@ class FileModel {
             'paged'          => $page,
             'orderby'        => 'date',
             'order'          => 'DESC',
+            'post_parent'    => $chatbotId,
             'post_mime_type' => array_values(self::ALLOWED_TYPES),
         ];
 
@@ -41,7 +42,7 @@ class FileModel {
         ];
     }
 
-    public function upload(array $file): array {
+    public function upload(array $file, int|string $chatbotId): array {
         $allowed_types_values = array_values(self::ALLOWED_TYPES);
 
         if ($file['error'] !== UPLOAD_ERR_OK) {
@@ -77,6 +78,7 @@ class FileModel {
             'post_content'   => '',
             'post_status'    => 'inherit',
             'post_author'    => get_current_user_id(),
+            'post_parent'    => $chatbotId,
         ];
 
         $attachment_id = wp_insert_attachment($attachment_data, $uploaded['file']);
@@ -121,7 +123,10 @@ class FileModel {
 
     private function formatAttachment(\WP_Post $attachment, ?string $originalName = null): array {
         $file_path = get_attached_file($attachment->ID);
-        
+
+        $chatbotsInUse = get_post_meta($attachment->ID, WPB_CHATBOT_FILE_IN_USE_FIELD, true);
+        $inUse = is_array($chatbotsInUse) && in_array($attachment->post_parent, $chatbotsInUse);
+
         return [
             'id'         => $attachment->ID,
             'url'        => wp_get_attachment_url($attachment->ID),
@@ -132,7 +137,8 @@ class FileModel {
             'modifiedAt' => $attachment->post_modified_gmt,
             'uploader'   => get_the_author_meta('display_name', $attachment->post_author),
             'uploaderId' => $attachment->post_author,
-            'inUse'      => get_post_meta($attachment->ID, WPB_CHATBOT_FILE_IN_USE_FIELD, true) === '1',
+            'inUse'      => $inUse,
+            'chatbotId'  => $attachment->post_parent,
         ];
     }
 }

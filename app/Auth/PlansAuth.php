@@ -12,31 +12,31 @@ class PlansAuth extends BaseAuth {
         parent::__construct($configsModel);
     }
 
-    public function view(): bool {
+    public function view(int|string $userId): bool {
         return true;
     }
 
-    public function list(): bool {
+    public function list(int|string $userId, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 
-    public function store(): bool {
+    public function store(int|string $userId, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 
-    public function trash(int|string $id): bool {
+    public function trash(int|string $userId, int|string $id, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 
-    public function remove(int|string $id): bool {
+    public function remove(int|string $userId, int|string $id, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 
-    public function bulkTrash(array $ids): bool {
+    public function bulkTrash(int|string $userId, array $ids, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 
-    public function bulkRemove(array $ids): bool {
+    public function bulkRemove(int|string $userId, array $ids, ...$args): bool {
         return $this->currentUserCan('manage_options');
     }
 }

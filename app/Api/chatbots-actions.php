@@ -9,7 +9,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'GET',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::list',
         'permission_callback' => function () {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->list();
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->list(get_current_user_id());
         }
     ));
 });
@@ -20,7 +20,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'GET',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::get',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->get($request->get_param('id'));
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->get(get_current_user_id(), $request->get_param('id'));
         }
     ));
 });
@@ -31,7 +31,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'POST',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::create',
         'permission_callback' => function () {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->store();
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->store(get_current_user_id());
         }
     ));
 });
@@ -42,7 +42,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'PUT',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::update',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->update($request->get_param('id'));
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->update(get_current_user_id(), $request->get_param('id'));
         }
     ));
 });
@@ -53,7 +53,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'DELETE',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::trash',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->trash($request->get_param('id'));
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->trash(get_current_user_id(), $request->get_param('id'));
         }
     ));
 });
@@ -64,7 +64,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'DELETE',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::remove',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->remove($request->get_param('id'));
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->remove(get_current_user_id(), $request->get_param('id'));
         }
     ));
 });
@@ -75,7 +75,7 @@ add_action('rest_api_init', function () {
         'methods'             => 'POST',
         'callback'            => 'WPBulgaria\Chatbot\Actions\ChatbotAction::restore',
         'permission_callback' => function ($request) {
-            return wpb_chatbot_app(ChatbotAuthFactory::class)->restore($request->get_param('id'));
+            return wpb_chatbot_app(ChatbotAuthFactory::class)->restore(get_current_user_id(), $request->get_param('id'));
         }
     ));
 });

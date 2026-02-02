@@ -7,7 +7,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ConfigsAction::store',
         'permission_callback' => function () {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ConfigsAuthFactory::class)->store();
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ConfigsAuthFactory::class)->store(get_current_user_id());
         }
     ) );
 });
@@ -17,7 +17,7 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'WPBulgaria\Chatbot\Actions\ConfigsAction::view',
         'permission_callback' => function () {
-            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ConfigsAuthFactory::class)->view();
+            return wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ConfigsAuthFactory::class)->view(get_current_user_id());
         }   
     ) );
 });

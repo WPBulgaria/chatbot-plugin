@@ -16,6 +16,7 @@ class ChatbotValidator extends BaseValidator {
         $this->rules = [
             "title" => fn($data) => is_string($data) && strlen(trim($data)) > 0 && strlen($data) <= 200,
             "description" => fn($data) => !$data || is_string($data),
+            "status" => fn($data) => in_array($data, ['publish', 'draft']),
             "config" => fn($data) => $this->configValidator->isValid($data),
         ];
 
@@ -23,6 +24,7 @@ class ChatbotValidator extends BaseValidator {
             "title" => "Title is required and must be a non-empty string with max 200 characters",
             "description" => "Description must be a string",
             "config" => "Invalid chatbot configuration",
+            "status" => "Invalid status",
         ];
     }
 

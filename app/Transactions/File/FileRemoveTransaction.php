@@ -17,11 +17,12 @@ class FileRemoveTransaction {
     }
 
     public function execute(int $id) {
-        $fileInUse = get_post_meta($id, WPB_CHATBOT_FILE_IN_USE_FIELD, true);
+        $fileInUse = get_post_meta($id, WPB_CHATBOT_FILE_IN_USE_FIELD, true) ?: [];
         $attachment = get_post($id);
-        if ($fileInUse === '1') {
-            $this->searchFileModel->remove($attachment->guid);
-            delete_post_meta($id, WPB_CHATBOT_FILE_IN_USE_FIELD);
+        if (is_array($fileInUse) && in_array($attachment->post_parent, $fileInUse)) {
+            $this->searchFileModel->remove($attachment->guid, $attachment->post_parent);
+            $fileInUse = array_diff($fileInUse, [$attachment->post_parent]);
+            update_post_meta($id, WPB_CHATBOT_FILE_IN_USE_FIELD, $fileInUse);
         }
         return $this->fileModel->remove($id);
     }

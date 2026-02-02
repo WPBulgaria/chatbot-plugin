@@ -17,36 +17,37 @@ class ChatsAuth extends BaseAuth {
         $this->planService = $planService;
     }
 
-    public function list($userId = 0): bool {
+    public function list(int|string $userId, ...$args): bool {
         if ($this->isAdminsOnly()) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to list chats'));
             });
         }
 
-        if (!empty($userId) && $userId > 0 && !$this->currentUserCan('edit_others_posts')) {
+        if (!empty($userId) && $userId > 0 && !$this->userCan($userId, 'edit_others_posts')) {
             return $this->check($userId === $this->currentUserId(), function() {
                 $this->setError(new AuthError('invalid_user', 'You are not allowed to list chats for this user'));
             });
         }
 
-        return $this->check($this->currentUserCan('edit_others_posts'), function() {
+        return $this->check($this->userCan($userId, 'edit_others_posts'), function() {
             $this->setError(new AuthError('edit_others_posts', 'You are not allowed to list chats for other users'));
         });
     }
 
-    public function get(int|string $id): bool {
+    public function get(int|string $userId, int|string $id, ...$args): bool {
         if ($this->isAdminsOnly()) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to get chat'));
             });
         }
-        return $this->check($this->currentUserCan('edit_others_posts') || $this->currentUserCan('edit_post', $id), function() {
+        return $this->check($this->userCan($userId, 'edit_others_posts') || $this->currentUserCan('edit_post', $id), function() {
             $this->setError(new AuthError('edit_others_posts', 'You are not allowed to get chat for other users'));
         });
     }
 
-    public function store(): bool {
+    public function store(int|string $userId, ...$args): bool {
+        $chatbotId = $args[0] ?? 0;
         if ($this->isAdminsOnly()) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to store chat'));
@@ -57,17 +58,17 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
-        if ($this->planService->isGlobalChatsLimitReached()) {
+        if ($this->planService->isGlobalChatsLimitReached($chatbotId)) {
             $this->setError(new AuthError('global_limit_reached', 'The monthly chat limit for this service has been reached.'));
             return false;
         }
 
-        return $this->check($this->planService->canCreateChat($this->currentUserId()), function() {
+        return $this->check($this->planService->canCreateChat($userId, $chatbotId), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for starting new chats.'));
         });
     }
 
-    public function chat(int|string|null $id = null): bool {
+    public function chat(int|string $userId = 0, int|string|null $id = null, int|string $chatbotId = 0): bool {
         if ($this->isAdminsOnly()) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to chat'));
@@ -78,12 +79,12 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
-        return $this->check($this->store() && $this->planService->canAskQuestion($this->currentUserId()), function() {
+        return $this->check($this->store($userId, $chatbotId) && $this->planService->canAskQuestion($userId, $chatbotId), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan.'));
         });
     }
 
-    public function stream(int|string|null $id = null): bool {
+    public function stream(int|string $userId = 0, int|string|null $id = null, int|string $chatbotId = 0): bool {
         if ($this->isAdminsOnly()) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to stream chat '));
@@ -94,22 +95,22 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
         
-        return $this->check($this->store() && $this->planService->canAskQuestion($this->currentUserId()), function() {
+        return $this->check($this->store($userId, $chatbotId) && $this->planService->canAskQuestion($userId, $chatbotId), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan.'));
         });
     }
 
-    public function canAnnonAskQuestion(int $currentChatMessageCount): bool {
+    public function canAnnonAskQuestion(int $currentChatMessageCount, int|string $chatbotId = 0): bool {
         if (!$this->planService) {
             return true;
         }
 
-        if ($this->planService->isGlobalChatsLimitReached()) {
+        if ($this->planService->isGlobalChatsLimitReached($chatbotId)) {
             $this->setError(new AuthError('global_limit_reached', 'The monthly questions limit for this service has been reached.'));
             return false;
         }
 
-        return $this->check($this->planService->canAnnonAskQuestion($currentChatMessageCount), function() {
+        return $this->check($this->planService->canAnnonAskQuestion($currentChatMessageCount, $chatbotId), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for asking questions.'));
         });
     }
@@ -117,12 +118,12 @@ class ChatsAuth extends BaseAuth {
     /**
      * Check if question message size is allowed by plan
      */
-    public function validateQuestionSize(string $message): bool {
+    public function validateQuestionSize(int|string $userId = 0, string $message, int|string $chatbotId = 0): bool {
         if (!$this->planService) {
             return true;
         }
 
-        return $this->check($this->planService->isQuestionSizeAllowed($this->currentUserId(), $message), function() {
+        return $this->check($this->planService->isQuestionSizeAllowed($userId, $chatbotId, $message), function() {
             $this->setError(new AuthError('question_size_limit_reached', 'You have reached the limit of your plan because of too long question'));
         });
     }
@@ -130,7 +131,7 @@ class ChatsAuth extends BaseAuth {
     /**
      * Get user's plan usage summary
      */
-    public function getUsageSummary(): array {
+    public function getUsageSummary(int|string $userId = 0, int|string $chatbotId = 0): array {
         if (!$this->planService) {
             return [
                 'hasPlan'            => false,
@@ -147,45 +148,45 @@ class ChatsAuth extends BaseAuth {
             ];
         }
 
-        return $this->planService->getUsageSummary($this->currentUserId());
+        return $this->planService->getUsageSummary($userId, $chatbotId);
     }
 
     /**
      * Get history size limit for current user
      */
-    public function getHistorySize(): int {
+    public function getHistorySize(int|string $userId = 0, int|string $chatbotId = 0): int {
         if (!$this->planService) {
             return -1;
         }
 
-        return $this->planService->getHistorySize($this->currentUserId());
+        return $this->planService->getHistorySize($userId, $chatbotId);
     }
 
-    public function updateTitle(int|string $id): bool {
+    public function updateTitle(int|string $userId = 0, int|string $id): bool {
         if ($this->isAdminsOnly()) {
             return $this->currentUserCan('manage_options');
         }
-        return $this->currentUserCan('edit_others_posts') || $this->currentUserCan('edit_post', $id);
+        return $this->userCan($userId, 'edit_others_posts') || $this->userCan($userId, 'edit_post', $id);
     }
 
-    public function trash(int|string $id): bool {
+    public function trash(int|string $userId, int|string $id, ...$args): bool {
         if ($this->isAdminsOnly()) {
             return $this->currentUserCan('manage_options');
         }
-        return $this->currentUserCan('delete_others_posts') || $this->currentUserCan('delete_post', $id);
+        return $this->userCan($userId, 'delete_others_posts') || $this->userCan($userId, 'delete_post', $id);
     }
 
-    public function remove(int|string $id): bool {
+    public function remove(int|string $userId, int|string $id, ...$args): bool {
         if ($this->isAdminsOnly()) {
             return $this->currentUserCan('manage_options');
         }
-        return $this->currentUserCan('delete_others_posts') || $this->currentUserCan('delete_post', $id);
+        return $this->userCan($userId, 'delete_others_posts') || $this->userCan($userId, 'delete_post', $id);
     }
 
-    public function restore(int|string $id): bool {
+    public function restore(int|string $userId = 0, int|string $id): bool {
         if ($this->isAdminsOnly()) {    
             return $this->currentUserCan('manage_options');
         }
-        return $this->currentUserCan('edit_others_posts') || $this->currentUserCan('edit_post', $id);
+        return $this->userCan($userId, 'edit_others_posts') || $this->userCan($userId, 'edit_post', $id);
     }
 }

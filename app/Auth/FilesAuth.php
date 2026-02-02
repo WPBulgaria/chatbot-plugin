@@ -12,27 +12,27 @@ class FilesAuth extends BaseAuth {
         parent::__construct($configsModel);
     }
 
-    public function list(): bool {
-        return $this->currentUserCan('manage_options');
+    public function list(int|string $userId, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 
-    public function store(): bool {
-        return $this->currentUserCan('manage_options');
+    public function store(int|string $userId, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 
-    public function upload(): bool {
-        return $this->currentUserCan('manage_options');
+    public function upload(int|string $userId, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 
-    public function trash(int|string $id): bool {
-        return $this->currentUserCan('manage_options');
+    public function trash(int|string $userId, int|string $id, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 
-    public function remove(int|string $id): bool {
-        return $this->currentUserCan('manage_options');
+    public function remove(int|string $userId, int|string $id, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 
-    public function use(int|string $id): bool {
-        return $this->currentUserCan('manage_options');
+    public function use(int|string $userId, int|string $id, ...$args): bool {
+        return $this->userCan($userId, 'manage_options');
     }
 }

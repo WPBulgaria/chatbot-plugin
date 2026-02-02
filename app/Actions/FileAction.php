@@ -11,6 +11,13 @@ defined( 'ABSPATH' ) || exit;
 class FileAction {
 
     static function upload(\WP_REST_Request $request) {
+        $data = $request->get_params();
+        $chatbotId = isset($data['chatbot_id']) ? absint($data['chatbot_id']) : 0;
+
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
+        }
+
         $files = $request->get_file_params();
 
         if (empty($files['file'])) {
@@ -18,7 +25,7 @@ class FileAction {
         }
 
         try {
-            $file = wpb_chatbot_app(FileModel::class)->upload($files['file']);
+            $file = wpb_chatbot_app(FileModel::class)->upload($files['file'], $chatbotId);
             return new \WP_REST_Response(["success" => true, "file" => $file], 200);
         } catch (\Exception $e) {
             return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $e->getCode() ?: 500);
@@ -45,8 +52,13 @@ class FileAction {
         $params = $request->get_params();
         $per_page = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
+        $chatbotId = isset($params['chatbot_id']) ? absint($params['chatbot_id']) : 0;
 
-        $result = wpb_chatbot_app(FileModel::class)->list($per_page, $page);
+        if (empty($chatbotId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chatbot ID"], 400);
+        }
+
+        $result = wpb_chatbot_app(FileModel::class)->list($chatbotId, $per_page, $page);
 
         return new \WP_REST_Response([
             "success" => true,
@@ -59,6 +71,7 @@ class FileAction {
     static function use(\WP_REST_Request $request) {
         $data = $request->get_params();
         $id = isset($data['id']) ? absint($data['id']) : 0;
+        $chatbotId = isset($data['chatbot_id']) ? absint($data['chatbot_id']) : 0;
 
         if (empty($id)) {
             return new \WP_REST_Response(["success" => false, "message" => "Invalid file ID"], 400);
@@ -70,7 +83,7 @@ class FileAction {
         }
 
         $inUse = get_post_meta($id, WPB_CHATBOT_FILE_IN_USE_FIELD, true);
-        if ($inUse === '1') {
+        if (is_array($inUse) && in_array($chatbotId, $inUse)) {
             return new \WP_REST_Response(["success" => false, "message" => "File already in use"], 400);
         }
         

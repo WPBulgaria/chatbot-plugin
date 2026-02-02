@@ -36,48 +36,48 @@ class PlanService {
      * Get the effective plan for a user
      * Priority: User's assigned plan > Default plan > null
      */
-    public function getUserPlan(int $userId): ?array {
+    public function getUserPlan(int $userId, int|string $chatbotId): ?array {
         if ($userId <= 0) {
-            return $this->getPublicPlan();
+            return $this->getPublicPlan($chatbotId);
         }
 
-        $userPlanId = $this->planModel->getUserPlanId($userId);
+        $userPlanId = $this->planModel->getUserPlanId($chatbotId, $userId);
         if ($userPlanId) {
-            $plan = $this->planModel->get($userPlanId);
+            $plan = $this->planModel->get($chatbotId, $userPlanId);
             if ($plan) {
                 return $plan;
             }
         }
 
-        return $this->getDefaultPlan();
+        return $this->getDefaultPlan($chatbotId);
     }
 
     /**
      * Get the public plan for non-logged-in users
      */
-    public function getPublicPlan(): ?array {
-        $configs = $this->configsModel->view();
+    public function getPublicPlan(int|string $chatbotId): ?array {
+        $configs = $this->configsModel->view($chatbotId, true);
         $publicPlanId = $configs["publicPlan"] ?? "";
 
         if (empty($publicPlanId)) {
             return null;
         }
 
-        return $this->planModel->get($publicPlanId);
+        return $this->planModel->get($chatbotId, $publicPlanId);
     }
 
     /**
      * Get the default plan for logged-in users without assigned plan
      */
-    public function getDefaultPlan(): ?array {
-        $configs = $this->configsModel->view();
+    public function getDefaultPlan(int|string $chatbotId): ?array {
+        $configs = $this->configsModel->view($chatbotId, true);
         $defaultPlanId = $configs["defaultPlan"] ?? "";
 
         if (empty($defaultPlanId)) {
             return null;
         }
 
-        return $this->planModel->get($defaultPlanId);
+        return $this->planModel->get($chatbotId, $defaultPlanId);
     }
 
     /**
@@ -116,7 +116,7 @@ class PlanService {
     /**
      * Count user's chats within the plan period
      */
-    public function countUserChatsInPeriod(int $userId, string $period): int {
+    public function countUserChatsInPeriod(int $userId, int|string $chatbotId, string $period): int {
         if ($userId <= 0) {
             return 0;
         }
@@ -127,6 +127,7 @@ class PlanService {
             'post_type'      => ChatModel::POST_TYPE,
             'post_status'    => ['publish', 'trash'],
             'author'         => $userId,
+            'post_parent'    => $chatbotId,
             'date_query'     => [
                 [
                     'after'     => $periodStart,
@@ -144,12 +145,13 @@ class PlanService {
     /**
      * Count ALL chats globally within the current month
      */
-    public function countGlobalChatsThisMonth(): int {
+    public function countGlobalChatsThisMonth(int|string $chatbotId): int {
         $periodStart = $this->getPeriodStartDate(PlanPeriods::MONTH->value);
 
         $args = [
             'post_type'      => ChatModel::POST_TYPE,
             'post_status'    => ['publish', 'trash'],
+            'post_parent'    => $chatbotId,
             'date_query'     => [
                 [
                     'after'     => $periodStart,
@@ -167,12 +169,13 @@ class PlanService {
     /**
      * Count ALL questions globally within the current month
      */
-    public function countGlobalQuestionsThisMonth(): int {
+    public function countGlobalQuestionsThisMonth(int|string $chatbotId): int {
         $periodStart = $this->getPeriodStartDate(PlanPeriods::MONTH->value);
 
         $args = [
             'post_type'      => ChatModel::POST_TYPE,
             'post_status'    => ['publish'],
+            'post_parent'    => $chatbotId,
             'date_query'     => [
                 [
                     'after'     => $periodStart,
@@ -199,75 +202,75 @@ class PlanService {
     /**
      * Get global monthly chat limit from configs
      */
-    public function getGlobalChatsLimit(): int {
-        $configs = $this->configsModel->view();
+    public function getGlobalChatsLimit(int|string $chatbotId): int {
+        $configs = $this->configsModel->view($chatbotId, true);
         return (int) ($configs["totalChats"] ?? 0);
     }
 
     /**
      * Get global monthly questions limit from configs
      */
-    public function getGlobalQuestionsLimit(): int {
-        $configs = $this->configsModel->view();
+    public function getGlobalQuestionsLimit(int|string $chatbotId): int {
+        $configs = $this->configsModel->view($chatbotId, true);
         return (int) ($configs["totalQuestions"] ?? 0);
     }
 
     /**
      * Check if global monthly chat limit is reached
      */
-    public function isGlobalChatsLimitReached(): bool {
-        $limit = $this->getGlobalChatsLimit();
+    public function isGlobalChatsLimitReached(int|string $chatbotId): bool {
+        $limit = $this->getGlobalChatsLimit($chatbotId);
 
         if ($this->isUnlimited($limit) || $limit <= 0) {
             return false;
         }
 
-        return $this->countGlobalChatsThisMonth() >= $limit;
+        return $this->countGlobalChatsThisMonth($chatbotId) >= $limit;
     }
 
     /**
      * Check if global monthly questions limit is reached
      */
-    public function isGlobalQuestionsLimitReached(): bool {
-        $limit = $this->getGlobalQuestionsLimit();
+    public function isGlobalQuestionsLimitReached(int|string $chatbotId): bool {
+        $limit = $this->getGlobalQuestionsLimit($chatbotId);
 
         if ($this->isUnlimited($limit) || $limit <= 0) {
             return false;
         }
 
-        return $this->countGlobalQuestionsThisMonth() >= $limit;
+        return $this->countGlobalQuestionsThisMonth($chatbotId) >= $limit;
     }
 
     /**
      * Get remaining global chats this month
      */
-    public function getRemainingGlobalChats(): int {
-        $limit = $this->getGlobalChatsLimit();
+    public function getRemainingGlobalChats(int|string $chatbotId): int {
+        $limit = $this->getGlobalChatsLimit($chatbotId);
 
         if ($this->isUnlimited($limit) || $limit <= 0) {
             return self::UNLIMITED;
         }
 
-        return max(0, $limit - $this->countGlobalChatsThisMonth());
+        return max(0, $limit - $this->countGlobalChatsThisMonth($chatbotId));
     }
 
     /**
      * Get remaining global questions this month
      */
-    public function getRemainingGlobalQuestions(): int {
-        $limit = $this->getGlobalQuestionsLimit();
+    public function getRemainingGlobalQuestions(int|string $chatbotId): int {
+        $limit = $this->getGlobalQuestionsLimit($chatbotId);
 
         if ($this->isUnlimited($limit) || $limit <= 0) {
             return self::UNLIMITED;
         }
 
-        return max(0, $limit - $this->countGlobalQuestionsThisMonth());
+        return max(0, $limit - $this->countGlobalQuestionsThisMonth($chatbotId));
     }
 
     /**
      * Count user's questions (messages) within the plan period
      */
-    public function countUserQuestionsInPeriod(int $userId, string $period): int {
+    public function countUserQuestionsInPeriod(int $userId, int|string $chatbotId, string $period): int {
         if ($userId <= 0) {
             return 0;
         }
@@ -278,6 +281,7 @@ class PlanService {
             'post_type'      => ChatModel::POST_TYPE,
             'post_status'    => ['publish'],
             'author'         => $userId,
+            'post_parent'    => $chatbotId,
             'date_query'     => [
                 [
                     'after'     => $periodStart,
@@ -304,8 +308,8 @@ class PlanService {
     /**
      * Check if user can create a new chat
      */
-    public function canCreateChat(int $userId): bool {
-        $plan = $this->getUserPlan($userId);
+    public function canCreateChat(int $userId, int|string $chatbotId): bool {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return false;
@@ -318,13 +322,13 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentChats = $this->countUserChatsInPeriod($userId, $period);
+        $currentChats = $this->countUserChatsInPeriod($userId, $chatbotId, $period);
 
         return $currentChats < $totalChats;
     }
 
-    public function canAnnonAskQuestion(int $currentChatMessageCount): bool {
-        $plan = $this->getPublicPlan();
+    public function canAnnonAskQuestion(int $currentChatMessageCount, int|string $chatbotId): bool {
+        $plan = $this->getPublicPlan($chatbotId);
         
         if (!$plan) {
             return false;
@@ -342,8 +346,8 @@ class PlanService {
     /**
      * Check if user can ask a new question
      */
-    public function canAskQuestion(int $userId): bool {
-        $plan = $this->getUserPlan($userId);
+    public function canAskQuestion(int $userId, int|string $chatbotId): bool {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return false;
@@ -356,7 +360,7 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentQuestions = $this->countUserQuestionsInPeriod($userId, $period);
+        $currentQuestions = $this->countUserQuestionsInPeriod($userId, $chatbotId, $period);
 
         return $currentQuestions < $totalQuestions;
     }
@@ -364,8 +368,8 @@ class PlanService {
     /**
      * Check if question length is within plan limit
      */
-    public function isQuestionSizeAllowed(int $userId, string $question): bool {
-        $plan = $this->getUserPlan($userId);
+    public function isQuestionSizeAllowed(int $userId, int|string $chatbotId, string $question): bool {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return false;
@@ -383,8 +387,8 @@ class PlanService {
     /**
      * Get allowed history size for user's plan
      */
-    public function getHistorySize(int $userId): int {
-        $plan = $this->getUserPlan($userId);
+    public function getHistorySize(int $userId, int|string $chatbotId): int {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return 0;
@@ -396,8 +400,8 @@ class PlanService {
     /**
      * Get remaining chats for user
      */
-    public function getRemainingChats(int $userId): int {
-        $plan = $this->getUserPlan($userId);
+    public function getRemainingChats(int $userId, int|string $chatbotId): int {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return 0;
@@ -410,7 +414,7 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentChats = $this->countUserChatsInPeriod($userId, $period);
+        $currentChats = $this->countUserChatsInPeriod($userId, $chatbotId, $period);
 
         return max(0, $totalChats - $currentChats);
     }
@@ -418,8 +422,8 @@ class PlanService {
     /**
      * Get remaining questions for user
      */
-    public function getRemainingQuestions(int $userId): int {
-        $plan = $this->getUserPlan($userId);
+    public function getRemainingQuestions(int $userId, int|string $chatbotId): int {
+        $plan = $this->getUserPlan($userId, $chatbotId);
         
         if (!$plan) {
             return 0;
@@ -432,27 +436,27 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentQuestions = $this->countUserQuestionsInPeriod($userId, $period);
+        $currentQuestions = $this->countUserQuestionsInPeriod($userId, $chatbotId, $period);
 
         return max(0, $totalQuestions - $currentQuestions);
     }
 
-    public function getGlobalUsageSummary(): array {
+    public function getGlobalUsageSummary(int|string $chatbotId): array {
         return [
-            'globalChatsUsed'          => $this->countGlobalChatsThisMonth(),
-            'globalChatsTotal'         => $this->getGlobalChatsLimit(),
-            'globalChatsRemaining'     => $this->getRemainingGlobalChats(),
-            'globalQuestionsUsed'      => $this->countGlobalQuestionsThisMonth(),
-            'globalQuestionsTotal'     => $this->getGlobalQuestionsLimit(),
-            'globalQuestionsRemaining' => $this->getRemainingGlobalQuestions(),
+            'globalChatsUsed'          => $this->countGlobalChatsThisMonth($chatbotId),
+            'globalChatsTotal'         => $this->getGlobalChatsLimit($chatbotId),
+            'globalChatsRemaining'     => $this->getRemainingGlobalChats($chatbotId),
+            'globalQuestionsUsed'      => $this->countGlobalQuestionsThisMonth($chatbotId),
+            'globalQuestionsTotal'     => $this->getGlobalQuestionsLimit($chatbotId),
+            'globalQuestionsRemaining' => $this->getRemainingGlobalQuestions($chatbotId),
         ];
     }
 
     /**
      * Get user's plan usage summary
      */
-    public function getUsageSummary(int $userId): array {
-        $plan = $this->getUserPlan($userId);
+    public function getUsageSummary(int $userId, int|string $chatbotId): array {
+        $plan = $this->getUserPlan($userId, $chatbotId);
 
         if (!$plan) {
             return [
@@ -471,8 +475,8 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $chatsUsed = $this->countUserChatsInPeriod($userId, $period);
-        $questionsUsed = $this->countUserQuestionsInPeriod($userId, $period);
+        $chatsUsed = $this->countUserChatsInPeriod($userId, $chatbotId, $period);
+        $questionsUsed = $this->countUserQuestionsInPeriod($userId, $chatbotId, $period);
 
         return [
             'hasPlan'            => true,
@@ -481,10 +485,10 @@ class PlanService {
             'period'             => $period,
             'chatsUsed'          => $chatsUsed,
             'chatsTotal'         => $plan["totalChats"] ?? 0,
-            'chatsRemaining'     => $this->getRemainingChats($userId),
+            'chatsRemaining'     => $this->getRemainingChats($userId, $chatbotId),
             'questionsUsed'      => $questionsUsed,
             'questionsTotal'     => $plan["totalQuestions"] ?? 0,
-            'questionsRemaining' => $this->getRemainingQuestions($userId),
+            'questionsRemaining' => $this->getRemainingQuestions($userId, $chatbotId),
             'historySize'        => $plan["historySize"] ?? 0,
             'questionSize'       => $plan["questionSize"] ?? 0,
         ];

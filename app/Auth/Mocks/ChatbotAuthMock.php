@@ -12,19 +12,19 @@ class ChatbotAuthMock extends BaseAuthMock {
         parent::__construct($configsModel);
     }
 
-    public function list(): bool {
+    public function list(int|string $userId, ...$args): bool {
         return true;
     }
 
-    public function get(int|string $id): bool {
+    public function get(int|string $userId, int|string $id, ...$args): bool {
         return true;
     }
 
-    public function store(): bool {
+    public function store(int|string $userId, ...$args): bool {
         return true;
     }
 
-    public function update(int|string $id): bool {
+    public function update(int|string $userId, int|string $id): bool {
         return true;
     }
 
@@ -32,15 +32,15 @@ class ChatbotAuthMock extends BaseAuthMock {
         return true;
     }
 
-    public function trash(int|string $id): bool {
+    public function trash(int|string $userId, int|string $id, ...$args): bool {
         return true;
     }
 
-    public function remove(int|string $id): bool {
+    public function remove(int|string $userId, int|string $id, ...$args): bool {
         return true;
     }
 
-    public function restore(int|string $id): bool {
+    public function restore(int|string $userId, int|string $id, ...$args): bool {
         return true;
     }
 }

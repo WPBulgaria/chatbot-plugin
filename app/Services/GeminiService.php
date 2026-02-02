@@ -44,9 +44,9 @@ class GeminiService {
     /**
      * Get configs (lazy loaded)
      */
-    protected function getConfigs(): array {
+    public function getConfigs(): array {
         if ($this->configs === null) {
-            $this->configs = $this->chatbotModel->getConfig($this->getChatbotId());
+            $this->configs = $this->chatbotModel->getConfig($this->getChatbotId(), false);
         }
         return $this->configs;
     }
@@ -96,6 +96,19 @@ class GeminiService {
     public function getSystemInstructions(): ?string {
         $configs = $this->getConfigs();
         return $configs["systemInstructions"] ?? null;
+    }
+
+    public function listModels(): array {
+        $client = $this->getClient();
+        if (!$this->isConfigured() || !$client) {
+            throw new \Exception("Gemini client not found");
+        }
+        try {
+            $response = $client->models()->list();
+            return $response->models;
+        } catch (\Exception $e) {
+            throw new \Exception("Failed to list models: " . $e->getMessage());
+        }
     }
 
     public function listFileSearchStores(): array {

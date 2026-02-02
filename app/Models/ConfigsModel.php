@@ -52,7 +52,6 @@ class ConfigsModel {
     public function view(int|string $chatbotId, bool $secure = false): array {
         if ($this->cachedConfig === null || $secure) {
             $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY);
-
             if ($secure && is_array($configs)) {
                 $configs["apiKey"] = self::KEY_MASK;
             }

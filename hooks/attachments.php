@@ -7,12 +7,12 @@ function wpdocs_delete_attachment( $post_id ) {
 
     $attachment = get_post($post_id);
     $inUse = get_post_meta($post_id, WPB_CHATBOT_FILE_IN_USE_FIELD, true);
-    if ($inUse !== '1') {
+    if (empty($inUse) || !is_array($inUse) || !in_array($attachment->post_parent, $inUse)) {
         return;
     }
 
     try {
-        wpb_chatbot_app(SearchFileModel::class)->remove($attachment->guid); 
+        wpb_chatbot_app(SearchFileModel::class)->remove($attachment->guid, $attachment->post_parent); 
     } catch (\Exception $e) {
         error_log($e->getMessage());
         return;

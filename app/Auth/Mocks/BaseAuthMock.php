@@ -30,7 +30,7 @@ class BaseAuthMock extends BaseAuth {
         return new \WP_User(0);
     }
 
-    public function userCan(int $userId, string $capability, ...$args): bool {
+    public function userCan(int|string $userId, string $capability, ...$args): bool {
         return true;
     }
 

@@ -53,34 +53,35 @@ abstract class BaseAuth implements AuthInterface {
     /**
      * Default implementation - override in child classes
      */
-    public function list(): bool {
+    public function list(int|string $userId, ...$args): bool {
         return current_user_can('manage_options');
     }
 
     /**
      * Default implementation - override in child classes
      */
-    public function store(): bool {
+    public function store(int|string $userId, ...$args): bool {
         return current_user_can('manage_options');
     }
 
     /**
      * Default implementation - override in child classes
      */
-    public function trash(string|int $id): bool {
+    public function trash(int|string $userId, int|string $id, ...$args): bool {
         return current_user_can('manage_options');
     }
 
     /**
      * Default implementation - override in child classes
      */
-    public function remove(string|int $id): bool {
+    public function remove(int|string $userId, int|string $id, ...$args): bool {
         return current_user_can('manage_options');
     }
 
     public function currentUserCan(string $capability, ...$args): bool {
         return current_user_can($capability, ...$args);
     }
+
 
     public function currentUserId(): int {
         return get_current_user_id();
@@ -90,7 +91,7 @@ abstract class BaseAuth implements AuthInterface {
         return wp_get_current_user();
     }
 
-    public function userCan(int $userId, string $capability, ...$args): bool {
+    public function userCan(int|string $userId, string $capability, ...$args): bool {
         return user_can($userId, $capability, ...$args);
     }
 }

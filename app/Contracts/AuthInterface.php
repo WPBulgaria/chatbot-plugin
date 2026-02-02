@@ -12,22 +12,22 @@ interface AuthInterface {
     /**
      * Check if user can list resources
      */
-    public function list(): bool;
+    public function list(int|string $userId, ...$args): bool;
 
     /**
      * Check if user can store/create resources
      */
-    public function store(): bool;
+    public function store(int|string $userId, ...$args): bool;
 
     /**
      * Check if user can trash a resource
      */
-    public function trash(string|int $id): bool;
+    public function trash(int|string $userId, int|string $id, ...$args): bool;
 
     /**
      * Check if user can permanently remove a resource
      */
-    public function remove(string|int $id): bool;
+    public function remove(int|string $userId, int|string $id, ...$args): bool;
 
     /**
      * Check if current user can perform a capability

@@ -2,6 +2,8 @@
 
 namespace WPBulgaria\Chatbot\Models;
 
+use WPBulgaria\Chatbot\Services\GeminiService;
+
 defined('ABSPATH') || exit;
 
 class ChatbotModel extends BaseModel {
@@ -36,7 +38,7 @@ class ChatbotModel extends BaseModel {
         $chatbots = [];
 
         foreach ($query->posts as $post) {
-            $chatbots[] = $this->formatChatbot($post);
+            $chatbots[] = $this->formatChatbot($post, []);
         }
 
         return [
@@ -56,14 +58,16 @@ class ChatbotModel extends BaseModel {
             return null;
         }
 
+        //$models = $this->listModels($id);
+
         return $this->formatChatbot($post);
     }
 
     /**
      * Get chatbot config
      */
-    public function getConfig(int|string $id): array {
-        return $this->configsModel->view($id, true);
+    public function getConfig(int|string $id, bool $secure = true): array {
+        return $this->configsModel->view($id, $secure);
     }
 
     /**
@@ -104,6 +108,10 @@ class ChatbotModel extends BaseModel {
 
         if (isset($data['description'])) {
             $updateData['post_content'] = wp_kses_post($data['description']);
+        }
+
+        if (isset($data['status'])) {
+            $updateData['post_status'] = $data['status'];
         }
 
         $result = $this->postModel->update($updateData, true);
@@ -179,7 +187,7 @@ class ChatbotModel extends BaseModel {
     /**
      * Format chatbot post for API response
      */
-    private function formatChatbot(\WP_Post $post): array {
+    private function formatChatbot(\WP_Post $post, array $models = []): array {
         $config = $this->getConfig($post->ID);
 
         return [
@@ -190,6 +198,7 @@ class ChatbotModel extends BaseModel {
             'modifiedAt'  => date('Y-m-d H:i:s', strtotime($post->post_modified_gmt)),
             'config'      => $config,
             'status'      => $post->post_status,
+            'models'      => $models,
         ];
     }
 }

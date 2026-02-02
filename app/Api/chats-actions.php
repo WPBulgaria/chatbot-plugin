@@ -9,7 +9,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->list((int) $request->get_param('user_id'));
+            $result = $auth->list((int) $request->get_param('user_id') ?: get_current_user_id());
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -26,7 +26,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::list',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->list((int) $request->get_param('user_id'));
+            $result = $auth->list((int) $request->get_param('user_id') ?: get_current_user_id());
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -42,7 +42,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::get',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->get($request->get_param('id'));
+            $result = $auth->get(get_current_user_id(), $request->get_param('id'));
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -53,18 +53,19 @@ add_action( 'rest_api_init', function () {
 
 // POST /chats - Create new chat with message
 add_action( 'rest_api_init', function () {
-    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats', array(
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats', array(
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $chatbotId = $request->get_param('chatbot_id');
 
-            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+            if (!$auth->validateQuestionSize(get_current_user_id(), $request->get_param('message') ?? '', $chatbotId)) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
 
 
-            $result = $auth->chat();
+            $result = $auth->chat(get_current_user_id(), null, $chatbotId);
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -75,25 +76,25 @@ add_action( 'rest_api_init', function () {
 
 // POST /chats/{id} - Continue existing chat
 add_action( 'rest_api_init', function () {
-    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/(?P<id>\d+)', array(
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats/(?P<id>\d+)', array(
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::chat',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-
-            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+            $chatbotId = $request->get_param('chatbot_id');
+            if (!$auth->validateQuestionSize(get_current_user_id(), $request->get_param('message') ?? '', $chatbotId)) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
 
             if (!$auth->currentUserId()) {
                 $messages = wpb_chatbot_app(\WPBulgaria\Chatbot\Models\ChatModel::class)->getMessages($request->get_param('id'));
 
-                if (!$auth->canAnnonAskQuestion(count($messages))) {
+                if (!$auth->canAnnonAskQuestion(count($messages), $chatbotId)) {
                     return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
                 }
             }
 
-            $result = $auth->chat($request->get_param('id'));
+            $result = $auth->chat(get_current_user_id(), $request->get_param('id'), $chatbotId);
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -109,7 +110,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::updateTitle',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->updateTitle($request->get_param('id'));
+            $result = $auth->updateTitle(get_current_user_id(), $request->get_param('id'));
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -125,7 +126,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::trash',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->trash($request->get_param('id'));
+            $result = $auth->trash(get_current_user_id(), $request->get_param('id'));
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -141,7 +142,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::remove',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->remove($request->get_param('id'));
+            $result = $auth->remove(get_current_user_id(), $request->get_param('id'));
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -157,7 +158,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::restore',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
-            $result = $auth->restore($request->get_param('id'));
+            $result = $auth->restore(get_current_user_id(), $request->get_param('id'));
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -169,17 +170,18 @@ add_action( 'rest_api_init', function () {
 
 // POST /chats/stream - Create new chat and stream the response
 add_action( 'rest_api_init', function () {
-    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/stream', array(
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats/stream', array(
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $chatbotId = $request->get_param('chatbot_id');
 
-            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+            if (!$auth->validateQuestionSize(get_current_user_id(), $request->get_param('message') ?? '', $chatbotId)) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
 
-            $result = $auth->stream();
+            $result = $auth->stream(get_current_user_id(), null, $chatbotId);
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
@@ -190,13 +192,14 @@ add_action( 'rest_api_init', function () {
 
 // POST /chats/{id}/stream - Continue existing chat and stream the response
 add_action( 'rest_api_init', function () {
-    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chats/(?P<id>\d+)/stream', array(
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats/(?P<id>\d+)/stream', array(
         'methods' => 'POST',
         'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::stream',
         'permission_callback' => function ($request) {
             $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $chatbotId = $request->get_param('chatbot_id');
 
-            if (!$auth->validateQuestionSize($request->get_param('message') ?? '')) {
+            if (!$auth->validateQuestionSize(get_current_user_id(), $request->get_param('message') ?? '', $chatbotId)) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }
 
@@ -204,13 +207,13 @@ add_action( 'rest_api_init', function () {
             if (!$auth->currentUserId()) {
                 $messages = wpb_chatbot_app(\WPBulgaria\Chatbot\Models\ChatModel::class)->getMessages($request->get_param('id'));
 
-                if (!$auth->canAnnonAskQuestion(count($messages))) {
+                if (!$auth->canAnnonAskQuestion(count($messages), $chatbotId)) {
                     return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
                 }
             }
 
 
-            $result = $auth->stream($request->get_param('id'));
+            $result = $auth->stream(get_current_user_id(), $request->get_param('id'), $chatbotId);
             if ($auth->hasError() && !$result) {
                 return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
             }

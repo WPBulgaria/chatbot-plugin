@@ -29,7 +29,7 @@ class ChatAction {
         $params = $request->get_params();
         $perPage = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
-        $userId = isset($params['user_id']) ? absint($params['user_id']) : 0;
+        $userId = get_current_user_id();
 
 
         $urlParams = $request->get_url_params();
@@ -81,6 +81,15 @@ class ChatAction {
 
         $message = $body['message'] ?? '';
         $chatId = isset($params['id']) ? absint($params['id']) : null;
+        $chatbotId = isset($params['chatbot_id']) ? absint($params['chatbot_id']) : 0;
+
+        if (empty($chatbotId)) {
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => "Invalid chatbot ID", "code" => 400]) . "\n\n";
+            flush();
+            exit();
+        }
+
 
         $validator = ChatValidator::make();
 
@@ -101,7 +110,7 @@ class ChatAction {
         try {
             // Use ChatService via DI
             $chatService = self::getChatService();
-            $result = wpb_chatbot_app(ChatModel::class)->chat($message, $chatId);
+            $result = wpb_chatbot_app(ChatModel::class)->chat($chatbotId, $message, $chatId);
 
             return new \WP_REST_Response([
                 "success" => true,
@@ -229,13 +238,19 @@ class ChatAction {
      */
     public static function stream(\WP_REST_Request $request): void {
         // Set SSE headers
+
+        if (_WPB_CHATBOT_DEBUG) {
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: *');
+        }
+
         header('Content-Type: text/event-stream');
         header('Cache-Control: no-cache');
         header('Connection: keep-alive');
         header('X-Accel-Buffering: no');
         header('X-SSE: 1');
 
-        if (user_rate_limit_exceeded()) {
+       if (user_rate_limit_exceeded()) {
             echo "event: error\n";
             echo "data: " . json_encode(['success' => false, 'message' => "Rate limit exceeded", "code" => 429]) . "\n\n";
             flush();
@@ -247,6 +262,14 @@ class ChatAction {
 
         $message = $body['message'] ?? '';
         $chatId = isset($params['id']) ? absint($params['id']) : null;
+        $chatbotId = isset($params['chatbot_id']) ? absint($params['chatbot_id']) : 0;
+
+        if (empty($chatbotId)) {
+            echo "event: error\n";
+            echo "data: " . json_encode(['success' => false, 'message' => "Invalid chatbot ID", "code" => 400]) . "\n\n";
+            flush();
+            exit();
+        }
 
         $validator = ChatValidator::make();
 
@@ -268,7 +291,7 @@ class ChatAction {
 
         try {
             // Use ChatService via DI
-            wpb_chatbot_app(ChatModel::class)->stream($message, $chatId);
+            wpb_chatbot_app(ChatModel::class)->stream($chatbotId, $message, $chatId);
         } catch (\Exception $e) {
             $code = $e->getCode() ?: 500;
             echo "event: error\n";
