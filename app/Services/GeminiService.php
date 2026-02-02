@@ -8,6 +8,7 @@ use Gemini\Data\FileSearch;
 use Gemini\Data\Tool;
 use Gemini\Data\GenerationConfig;
 use Gemini\Enums\Role;
+use WPBulgaria\Chatbot\Models\SearchFileModel;
 use WPBulgaria\Chatbot\Models\ChatbotModel;
 use WPBulgaria\Chatbot\Models\ConfigsModel;
 
@@ -101,7 +102,10 @@ class GeminiService {
     public function listModels(): array {
         $client = $this->getClient();
         if (!$this->isConfigured() || !$client) {
-            throw new \Exception("Gemini client not found");
+            $model = new \stdClass();
+            $model->name = "gemini-2.5-flash";
+            $model->displayName = "Gemini 2.5 Flash";
+            return [$model];
         }
         try {
             $response = $client->models()->list();
@@ -114,7 +118,7 @@ class GeminiService {
     public function listFileSearchStores(): array {
         $client = $this->getClient();
         if (!$this->isConfigured() || !$client) {
-            throw new \Exception("Gemini client not found");    
+            throw new \Exception("Gemini client not found (2)");    
         }
 
         try {
@@ -131,7 +135,7 @@ class GeminiService {
     public function getFileSearchStore(string $name): ?string {
         $client = $this->getClient();
         if (!$client || empty($name)) {
-            throw new \Exception("Gemini client not found");
+            throw new \Exception("Gemini client not found (3)");
         }
 
         try {

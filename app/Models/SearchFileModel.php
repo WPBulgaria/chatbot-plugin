@@ -69,7 +69,7 @@ class SearchFileModel {
         $client = $this->geminiService->getClient();
 
         if (!$client) {
-            throw new \Exception("Gemini client not found");
+            throw new \Exception("Gemini client not found (4)");
         }
 
         try {

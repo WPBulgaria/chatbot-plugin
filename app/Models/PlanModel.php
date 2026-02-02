@@ -53,8 +53,8 @@ class PlanModel {
             return [];
         }
 
-        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?? [];
-        return $planIds;
+        $planIds = get_user_meta($userId, self::USER_PLAN_META_KEY, true) ?: [];
+        return is_array($planIds) ? $planIds : [];
     }
 
     /**
