@@ -5,7 +5,7 @@ Plugin Name: WPBulgaria Chatbot
 Plugin URI: https://wpbulgaria.com
 Description: A chatbot for WPBulgaria.
 Author: Sashe Vuchkov
-Version: 0.0.2
+Version: 0.0.3
 Author URI: https://wpbulgaria.com
 Text Domain: wpbulgaria-chatbot
 
@@ -27,6 +27,7 @@ define('WPB_CHATBOT_DIR', __DIR__);
 define('WPB_CHATBOT_SEARCH_DELIMITER', '{!--!}');
 define('WPB_CHATBOT_API_PREFIX', 'wpb-chatbot/v1');
 define('WPB_CHATBOT_FILE_IN_USE_FIELD', 'wpb_chatbot_file_in_use');
+define('WPB_CHATBOT_RATE_LIMIT', 10); // 10 requests per minute
 
 // Autoloader
 require_once WPB_CHATBOT_DIR . '/vendor/autoload.php';

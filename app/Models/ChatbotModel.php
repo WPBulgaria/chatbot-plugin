@@ -21,6 +21,26 @@ class ChatbotModel extends BaseModel {
         $this->configsModel = $configsModel;
     }
 
+
+    protected function listModels(int|string $id): array {
+        $service = wpb_chatbot_app(GeminiService::class);
+        $service->setChatbotId($id);
+        $models = $service->listModels();
+        
+        $formattedModels = [];
+        foreach ($models as $model) {
+            if (str_contains($model->displayName, 'Audio') || (!str_contains($model->displayName, 'Gemini') || (!str_contains($model->displayName, 'Pro') && !str_contains($model->displayName, 'Flash')))) {
+                continue;
+            }
+            $formattedModels[] = [
+                'name' => $model->name,
+                'displayName' => $model->displayName,
+            ];
+        }
+        
+        return $formattedModels;
+    }
+
     /**
      * List chatbots with pagination
      */
@@ -38,7 +58,7 @@ class ChatbotModel extends BaseModel {
         $chatbots = [];
 
         foreach ($query->posts as $post) {
-            $chatbots[] = $this->formatChatbot($post, []);
+            $chatbots[] = $this->formatChatbot($post);
         }
 
         return [
@@ -58,9 +78,9 @@ class ChatbotModel extends BaseModel {
             return null;
         }
 
-        //$models = $this->listModels($id);
+        $models = $this->listModels($id);
 
-        return $this->formatChatbot($post);
+        return $this->formatChatbot($post, $models);
     }
 
     /**

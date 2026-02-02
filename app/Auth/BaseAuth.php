@@ -45,8 +45,8 @@ abstract class BaseAuth implements AuthInterface {
         return new static($configsModel);
     }
 
-    public function isAdminsOnly(): bool {
-        $configs = $this->configsModel->view();
+    public function isAdminsOnly(int|string $chatbotId): bool {
+        $configs = $this->configsModel->view($chatbotId);
         return !empty($configs["adminsOnly"]);
     }
 

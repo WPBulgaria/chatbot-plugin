@@ -40,7 +40,7 @@ class ChatModel extends BaseModel {
         $chat = $isNewChat ? null : $this->get($chatId);
 
         if (!$isNewChat && !$chat) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (1)", 404);
         }
 
         $messages = $isNewChat ? [] : ($chat['messages'] ?? []);
@@ -126,7 +126,7 @@ class ChatModel extends BaseModel {
         $context = $this->prepareChat($chatId, $userId);
 
         /** @var GeminiService $geminiService */
-        $geminiService = $context['geminiService'];
+        $geminiService = $this->geminiService;
         /** @var int $contextUserId */
         $contextUserId = $context['userId'];
         /** @var bool $isNewChat */
@@ -146,6 +146,7 @@ class ChatModel extends BaseModel {
 
         $this->addUserMessage($messages, $message);
         $history = $geminiService->buildHistory($messages, ['windowSize' => $context['configs']['windowSize'] ?? 10]);
+        
 
         try {
             $responseText = $geminiService->streamMessage(
@@ -183,7 +184,7 @@ class ChatModel extends BaseModel {
      */
     public function chat(int $chatbotId, string $message, ?int $chatId = null, ?int $userId = null): array {
         $this->geminiService->setChatbotId($chatbotId);
-        $context = $this->prepareChat($chatbotId, $chatId, $userId);
+        $context = $this->prepareChat($chatId, $userId);
 
         /** @var GeminiService $geminiService */
         $geminiService = $context['geminiService'];
@@ -267,7 +268,7 @@ class ChatModel extends BaseModel {
         $post = get_post($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (8)", 404);
         }
 
         $this->postModel->updateMeta($id, self::META_MESSAGES, $messages);
@@ -288,7 +289,7 @@ class ChatModel extends BaseModel {
         $post = get_post($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (2)", 404);
         }
 
         $result = $this->postModel->update([
@@ -310,7 +311,7 @@ class ChatModel extends BaseModel {
         $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (3)", 404);
         }
 
         $result = $this->postModel->trash($id);
@@ -329,7 +330,7 @@ class ChatModel extends BaseModel {
         $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (4)", 404);
         }
 
         $result = $this->postModel->delete($id);
@@ -348,7 +349,7 @@ class ChatModel extends BaseModel {
         $post = $this->postModel->get($id);
 
         if (!$post || $post->post_type !== self::POST_TYPE) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (5)", 404);
         }
 
         $result = $this->postModel->untrash($id);

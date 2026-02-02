@@ -35,12 +35,28 @@ function edit_upload_types($existing_mimes = array()) {
 }
 add_filter('upload_mimes', 'WPBulgaria\Chatbot\Functions\edit_upload_types');
 
+function get_ip_address() {
+    foreach (array('HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_X_CLUSTER_CLIENT_IP', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR') as $key){
+        if (array_key_exists($key, $_SERVER) === true){
+            foreach (explode(',', $_SERVER[$key]) as $ip){
+                $ip = trim($ip);
+
+                if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false){
+                    return $ip;
+                }
+            }
+        }
+    }
+}
 
 function user_rate_limit_exceeded(): bool {
-    $rate_key = 'wpb_chat_rate_' . md5(get_current_user_id());
+    $user_id = get_current_user_id();
+    $identifier = $user_id ?: get_ip_address() ?? 'unknown';
+    $rate_key = 'wpb_chat_rate_' . md5($identifier);
+
     $rate_count = get_transient($rate_key) ?: 0;
 
-    if ($rate_count >= 10) { // 10 requests per minute
+    if ($rate_count >= WPB_CHATBOT_RATE_LIMIT) { // WPB_CHATBOT_RATE_LIMIT requests per minute
         return true;
     }
 

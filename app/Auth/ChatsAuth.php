@@ -18,7 +18,7 @@ class ChatsAuth extends BaseAuth {
     }
 
     public function list(int|string $userId, ...$args): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($args[0] ?? 0)) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to list chats'));
             });
@@ -36,7 +36,7 @@ class ChatsAuth extends BaseAuth {
     }
 
     public function get(int|string $userId, int|string $id, ...$args): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($args[0] ?? 0)) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to get chat'));
             });
@@ -48,7 +48,7 @@ class ChatsAuth extends BaseAuth {
 
     public function store(int|string $userId, ...$args): bool {
         $chatbotId = $args[0] ?? 0;
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($chatbotId)) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to store chat'));
             });
@@ -69,7 +69,7 @@ class ChatsAuth extends BaseAuth {
     }
 
     public function chat(int|string $userId = 0, int|string|null $id = null, int|string $chatbotId = 0): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($chatbotId)) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to chat'));
             });
@@ -85,7 +85,7 @@ class ChatsAuth extends BaseAuth {
     }
 
     public function stream(int|string $userId = 0, int|string|null $id = null, int|string $chatbotId = 0): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($chatbotId)) {
             return $this->check($this->currentUserCan('manage_options'), function() {
                 $this->setError(new AuthError('manage_options', 'You are not allowed to stream chat '));
             });
@@ -118,7 +118,7 @@ class ChatsAuth extends BaseAuth {
     /**
      * Check if question message size is allowed by plan
      */
-    public function validateQuestionSize(int|string $userId = 0, string $message, int|string $chatbotId = 0): bool {
+    public function validateQuestionSize(int|string $userId, string $message, int|string $chatbotId = 0): bool {
         if (!$this->planService) {
             return true;
         }
@@ -162,29 +162,29 @@ class ChatsAuth extends BaseAuth {
         return $this->planService->getHistorySize($userId, $chatbotId);
     }
 
-    public function updateTitle(int|string $userId = 0, int|string $id): bool {
-        if ($this->isAdminsOnly()) {
+    public function updateTitle(int|string $userId, int|string $id, int|string $chatbotId = 0): bool {
+        if ($this->isAdminsOnly($chatbotId)) {
             return $this->currentUserCan('manage_options');
         }
         return $this->userCan($userId, 'edit_others_posts') || $this->userCan($userId, 'edit_post', $id);
     }
 
     public function trash(int|string $userId, int|string $id, ...$args): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($args[0] ?? 0)) {
             return $this->currentUserCan('manage_options');
         }
         return $this->userCan($userId, 'delete_others_posts') || $this->userCan($userId, 'delete_post', $id);
     }
 
     public function remove(int|string $userId, int|string $id, ...$args): bool {
-        if ($this->isAdminsOnly()) {
+        if ($this->isAdminsOnly($args[0] ?? 0)) {
             return $this->currentUserCan('manage_options');
         }
         return $this->userCan($userId, 'delete_others_posts') || $this->userCan($userId, 'delete_post', $id);
     }
 
-    public function restore(int|string $userId = 0, int|string $id): bool {
-        if ($this->isAdminsOnly()) {    
+    public function restore(int|string $userId, int|string $id, ...$args): bool {
+        if ($this->isAdminsOnly($args[0] ?? 0)) {    
             return $this->currentUserCan('manage_options');
         }
         return $this->userCan($userId, 'edit_others_posts') || $this->userCan($userId, 'edit_post', $id);

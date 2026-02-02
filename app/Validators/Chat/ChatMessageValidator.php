@@ -11,7 +11,7 @@ class ChatMessageValidator extends BaseValidator {
 function __construct() {
     $this->rules = [
         "role" => fn($data) => in_array($data, ['user', 'model', 'system']),
-        "content" => fn($data) => is_string($data) && strlen($data) > 0,
+        "content" => fn($data) => is_string($data) && strlen($data) > 0 && strlen($data) <= 100000,
         "createdAt" => fn($data) => !$data || validateDate($data),
     ];
 

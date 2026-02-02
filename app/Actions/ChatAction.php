@@ -59,7 +59,7 @@ class ChatAction {
         $chat = wpb_chatbot_app(ChatModel::class)->get($id);
 
         if (!$chat) {
-            return new \WP_REST_Response(["success" => false, "message" => "Chat not found"], 404);
+            return new \WP_REST_Response(["success" => false, "message" => "Chat not found (7)"], 404);
         }
 
         return new \WP_REST_Response([

@@ -35,9 +35,15 @@ class FileAction {
     static function remove(\WP_REST_Request $request) {
         $data = $request->get_params();
         $id = isset($data['id']) ? absint($data['id']) : 0;
+        $chatbotId = isset($data['chatbot_id']) ? absint($data['chatbot_id']) : 0;
 
         if (empty($id)) {
             return new \WP_REST_Response(["success" => false, "message" => "Invalid file ID"], 400);
+        }
+
+        $file = wpb_chatbot_app(FileModel::class)->get($id);
+        if (!$file || $file['chatbotId'] !== $chatbotId) {
+            return new \WP_REST_Response(["success" => false, "message" => "File not found"], 404);
         }
 
         try {

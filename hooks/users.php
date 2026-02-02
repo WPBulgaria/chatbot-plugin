@@ -119,6 +119,11 @@ function wpb_chatbot_save_user_plan_field(int $userId): void {
         return;
     }
 
+    // Add nonce verification
+    if (!isset($_POST['_wpnonce']) || !wp_verify_nonce($_POST['_wpnonce'], 'update-user_' . $userId)) {
+        return;
+    }
+
     if (!isset($_POST['wpb_chatbot_user_plan'])) {
         return;
     }

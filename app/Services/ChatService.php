@@ -12,9 +12,11 @@ defined('ABSPATH') || exit;
 class ChatService {
 
     private GeminiService $geminiService;
+    private ChatModel $chatModel;
 
-    public function __construct(GeminiService $geminiService) {
+    public function __construct(GeminiService $geminiService, ChatModel $chatModel) {
         $this->geminiService = $geminiService;
+        $this->chatModel = $chatModel;
     }
 
     /**
@@ -36,10 +38,10 @@ class ChatService {
 
         $userId = $userId ?? get_current_user_id();
         $isNewChat = empty($chatId);
-        $chat = $isNewChat ? null : ChatModel::get($chatId);
+        $chat = $isNewChat ? null : $this->chatModel->get($chatId);
 
         if (!$isNewChat && !$chat) {
-            throw new \Exception("Chat not found", 404);
+            throw new \Exception("Chat not found (6)", 404);
         }
 
         $messages = $isNewChat ? [] : ($chat['messages'] ?? []);
@@ -55,7 +57,8 @@ class ChatService {
     /**
      * Send a chat message and get response
      */
-    public function sendMessage(string $message, ?int $chatId = null, ?int $userId = null): array {
+    public function sendMessage(int|string $chatbotId, string $message, ?int $chatId = null, ?int $userId = null): array {
+        $this->geminiService->setChatbotId($chatbotId);
         $context = $this->prepareChat($chatId, $userId);
 
         $messages = $context['messages'];
@@ -76,13 +79,14 @@ class ChatService {
 
             if ($isNewChat) {
                 $title = $this->generateTitle($message);
-                $resultChatId = ChatModel::create($title, $messages, $contextUserId);
+                $resultChatId = $this->chatModel->create($chatbotId, $title, $messages, $contextUserId);
             } else {
-                ChatModel::updateMessages($chatId, $messages);
+                $this->chatModel->updateMessages($chatId, $messages);
                 $title = $chat['title'] ?? '';
             }
 
             return [
+                'chatbotId' => $chatbotId,
                 'chatId'  => $resultChatId,
                 'message' => $responseText,
                 'isNew'   => $isNewChat,
@@ -96,7 +100,8 @@ class ChatService {
     /**
      * Stream a chat message response via SSE
      */
-    public function streamMessage(string $message, ?int $chatId = null, ?int $userId = null): void {
+    public function streamMessage(int|string $chatbotId, string $message, ?int $chatId = null, ?int $userId = null): void {
+        $this->geminiService->setChatbotId($chatbotId);
         $context = $this->prepareChat($chatId, $userId);
 
         $messages = $context['messages'];
@@ -109,7 +114,7 @@ class ChatService {
 
         if ($isNewChat) {
             $title = $this->generateTitle($message);
-            $streamChatId = ChatModel::create($title, $messages, $contextUserId);
+            $streamChatId = $this->chatModel->create($chatbotId, $title, $messages, $contextUserId);
         }
 
         $this->addUserMessage($messages, $message);
@@ -138,7 +143,7 @@ class ChatService {
             );
 
             $this->addModelMessage($messages, $responseText);
-            ChatModel::updateMessages($streamChatId, $messages);
+            $this->chatModel->updateMessages($streamChatId, $messages);
         } catch (\Exception $e) {
             throw new \Exception("Failed to get AI response: " . $e->getMessage(), 500);
         }

@@ -26,7 +26,7 @@ class ConfigsValidator extends BaseValidator {
             "maxOutputTokens" => fn($data) => is_int($data) && $data > 0 && $data <= 65000,
             "topP" => fn($data) => is_numeric($data) && $data >= 0 && $data <= 1,
             "topK" => fn($data) => is_int($data) && $data > 0 && $data <= 100,
-            "model" => fn($data) => is_string($data) && preg_match('/^[-a-z0-9_\/]+$/', $data),
+            "model" => fn($data) => is_string($data) && preg_match('/^[-a-z0-9_\/.]+$/', $data),
 
         ];
     }

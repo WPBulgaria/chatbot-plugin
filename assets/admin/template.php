@@ -4,7 +4,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 ?>
 
 <div id="wp-chatbot-admin-container"></div>
-<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-C2M8897i.js", ); ?>"></script>
+<script type="module" src="<?php echo esc_url($plugin_url . "/assets/admin/assets/index-DFw24g8I.js", ); ?>"></script>
 <script>
     
     window.wpbChatbotConfig = {
@@ -31,7 +31,7 @@ $plugin_url = plugin_dir_url(dirname(__DIR__));
 
         let bodyLink = document.createElement("link");
         bodyLink.setAttribute("rel", "stylesheet");
-        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/admin/assets/index-B54ZwsF9.css"); ?>');
+        bodyLink.setAttribute("href", '<?php echo esc_url($plugin_url . "/assets/admin/assets/index-D5dUCZbg.css"); ?>');
         document.body.prepend(bodyLink);
 
         /**

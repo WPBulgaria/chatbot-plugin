@@ -128,7 +128,8 @@ class AppServiceProvider extends ServiceProvider {
         // Register ChatService as singleton
         $container->singleton(ChatService::class, function ($c) {
             return new ChatService(
-                $c->make(GeminiService::class)
+                $c->make(GeminiService::class),
+                $c->make(ChatModel::class)
             );
         });
 
@@ -173,6 +174,8 @@ class AppServiceProvider extends ServiceProvider {
         // Register aliases for convenience
         $container->alias(GeminiService::class, 'gemini');
         $container->alias(ChatService::class, 'chat');
+        $container->alias(ChatModel::class, 'chatModel');
+        $container->alias(ChatbotModel::class, 'chatbotModel');
         $container->alias(ConfigsModel::class, 'config');
         $container->alias(PlanService::class, 'plan');
     }

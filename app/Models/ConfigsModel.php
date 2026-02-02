@@ -50,15 +50,11 @@ class ConfigsModel {
      * Get config (instance method for DI)
      */
     public function view(int|string $chatbotId, bool $secure = false): array {
-        if ($this->cachedConfig === null || $secure) {
-            $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY);
+        $configs = $this->postModel->getMeta($chatbotId, self::OPTIONS_KEY);
             if ($secure && is_array($configs)) {
                 $configs["apiKey"] = self::KEY_MASK;
             }
-
-            $this->cachedConfig = is_array($configs) ? $configs : [$configs];
-        }
-        return $this->cachedConfig;
+        return $configs;
     }
 
     /**

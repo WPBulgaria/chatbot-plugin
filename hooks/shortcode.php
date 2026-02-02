@@ -22,13 +22,13 @@ function wpbulgaria_chatbot_shortcode(array $atts = [], ?string $content = null)
         $history = "off";
     }
 
-    if (empty($atts["chatbot_id"])) {
+    if (empty($atts["id"])) {
         return '<div class="wpb-chatbot-error">Chatbot ID is required</div>';
     }
 
     $chatTheme = null;
     try {
-        $configs = wpb_chatbot_resolve(ConfigsModel::class)->view($atts["chatbot_id"], true);
+        $configs = wpb_chatbot_resolve(ConfigsModel::class)->view($atts["id"], true);
         if (!empty($configs["chatTheme"])) {
             $chatTheme = wp_json_encode($configs["chatTheme"], JSON_UNESCAPED_UNICODE);
         }
@@ -36,7 +36,7 @@ function wpbulgaria_chatbot_shortcode(array $atts = [], ?string $content = null)
         return '<div class="wpb-chatbot-error">Failed to load chatbot config</div>';
     }
 
-    return '<div id="wp-chatbot-chat-container" data-history="' . $history . '" data-chatbot="' . $atts["chatbot_id"] . '" data-theme="' . $chatTheme . '"></div>';
+    return '<div id="wp-chatbot-chat-container" data-history="' . esc_attr($history) . '" data-chatbot="' . esc_attr($atts["id"]) . '" data-theme="' . esc_attr($chatTheme) . '"></div>';
 }
 add_shortcode('wpbulgaria_chatbot', 'wpbulgaria_chatbot_shortcode');
 

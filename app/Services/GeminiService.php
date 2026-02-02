@@ -8,8 +8,8 @@ use Gemini\Data\FileSearch;
 use Gemini\Data\Tool;
 use Gemini\Data\GenerationConfig;
 use Gemini\Enums\Role;
-use WPBulgaria\Chatbot\Models\SearchFileModel;
 use WPBulgaria\Chatbot\Models\ChatbotModel;
+use WPBulgaria\Chatbot\Models\ConfigsModel;
 
 defined('ABSPATH') || exit;
 
@@ -79,7 +79,7 @@ class GeminiService {
         }
 
         $configs = $this->getConfigs();
-        return !empty($configs["apiKey"]);
+        return !empty($configs["apiKey"]) && $configs["apiKey"] !== ConfigsModel::KEY_MASK;
     }
 
     /**

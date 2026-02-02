@@ -14,7 +14,7 @@ class BaseAuthMock extends BaseAuth {
     }
 
 
-    public function isAdminsOnly(): bool {
+    public function isAdminsOnly(int|string $chatbotId): bool {
         return false;
     }
 
