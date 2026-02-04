@@ -12,9 +12,11 @@ class FileModel {
         'txt' => 'text/plain',
         'csv' => 'text/csv',
         'tsv' => 'text/tab-separated-values',
-        'xml' => 'application/xml'
+        'xml' => 'application/xml',
+        'md' => 'text/markdown',
+        
     ];
-    const MAX_FILE_SIZE = 10485760; // 10MB
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
 
     public function list(int|string $chatbotId, int $per_page = 20, int $page = 1): array {
         $args = [

@@ -58,12 +58,15 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
+        // Check global limits first (fail-fast with cached count)
         if ($this->planService->isGlobalChatsLimitReached($chatbotId)) {
             $this->setError(new AuthError('global_limit_reached', 'The monthly chat limit for this service has been reached.'));
             return false;
         }
 
-        return $this->check($this->planService->canCreateChat($userId, $chatbotId), function() {
+        // Fetch plan once and pass to canCreateChat
+        $plan = $this->planService->getCachedUserPlan($userId, $chatbotId);
+        return $this->check($this->planService->canCreateChat($userId, $chatbotId, $plan), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for starting new chats.'));
         });
     }
@@ -79,7 +82,21 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
 
-        return $this->check($this->store($userId, $chatbotId) && $this->planService->canAskQuestion($userId, $chatbotId), function() {
+        // Check global limits first (fail-fast)
+        if ($this->planService->isGlobalChatsLimitReached($chatbotId)) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly chat limit for this service has been reached.'));
+            return false;
+        }
+
+        // Fetch plan once and reuse for both checks
+        $plan = $this->planService->getCachedUserPlan($userId, $chatbotId);
+        
+        if (!$this->planService->canCreateChat($userId, $chatbotId, $plan)) {
+            $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for starting new chats.'));
+            return false;
+        }
+
+        return $this->check($this->planService->canAskQuestion($userId, $chatbotId, $plan), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan.'));
         });
     }
@@ -95,7 +112,21 @@ class ChatsAuth extends BaseAuth {
             return true;
         }
         
-        return $this->check($this->store($userId, $chatbotId) && $this->planService->canAskQuestion($userId, $chatbotId), function() {
+        // Check global limits first (fail-fast with cached count)
+        if ($this->planService->isGlobalChatsLimitReached($chatbotId)) {
+            $this->setError(new AuthError('global_limit_reached', 'The monthly chat limit for this service has been reached.'));
+            return false;
+        }
+
+        // Fetch plan once and reuse for both checks
+        $plan = $this->planService->getCachedUserPlan($userId, $chatbotId);
+        
+        if (!$this->planService->canCreateChat($userId, $chatbotId, $plan)) {
+            $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan for starting new chats.'));
+            return false;
+        }
+
+        return $this->check($this->planService->canAskQuestion($userId, $chatbotId, $plan), function() {
             $this->setError(new AuthError('plan_limit_reached', 'You have reached the limit of your plan.'));
         });
     }
@@ -117,13 +148,15 @@ class ChatsAuth extends BaseAuth {
 
     /**
      * Check if question message size is allowed by plan
+     * Uses cached plan for better performance
      */
     public function validateQuestionSize(int|string $userId, string $message, int|string $chatbotId = 0): bool {
         if (!$this->planService) {
             return true;
         }
 
-        return $this->check($this->planService->isQuestionSizeAllowed($userId, $chatbotId, $message), function() {
+        $plan = $this->planService->getCachedUserPlan($userId, $chatbotId);
+        return $this->check($this->planService->isQuestionSizeAllowed($userId, $chatbotId, $message, $plan), function() {
             $this->setError(new AuthError('question_size_limit_reached', 'You have reached the limit of your plan because of too long question'));
         });
     }

@@ -17,6 +17,7 @@ defined('ABSPATH') || exit;
 class PlanService {
 
     const UNLIMITED = -1;
+    const CACHE_TTL = 60 * 60; // 60 minutes - moderate caching
 
     protected PlanModel $planModel;
     protected ConfigsModel $configsModel;
@@ -217,6 +218,7 @@ class PlanService {
 
     /**
      * Check if global monthly chat limit is reached
+     * Uses cached count for better performance
      */
     public function isGlobalChatsLimitReached(int|string $chatbotId): bool {
         $limit = $this->getGlobalChatsLimit($chatbotId);
@@ -225,11 +227,12 @@ class PlanService {
             return false;
         }
 
-        return $this->countGlobalChatsThisMonth($chatbotId) >= $limit;
+        return $this->getCachedGlobalChatsCount($chatbotId) >= $limit;
     }
 
     /**
      * Check if global monthly questions limit is reached
+     * Uses cached count for better performance
      */
     public function isGlobalQuestionsLimitReached(int|string $chatbotId): bool {
         $limit = $this->getGlobalQuestionsLimit($chatbotId);
@@ -238,11 +241,12 @@ class PlanService {
             return false;
         }
 
-        return $this->countGlobalQuestionsThisMonth($chatbotId) >= $limit;
+        return $this->getCachedGlobalQuestionsCount($chatbotId) >= $limit;
     }
 
     /**
      * Get remaining global chats this month
+     * Uses cached count for better performance
      */
     public function getRemainingGlobalChats(int|string $chatbotId): int {
         $limit = $this->getGlobalChatsLimit($chatbotId);
@@ -251,11 +255,12 @@ class PlanService {
             return self::UNLIMITED;
         }
 
-        return max(0, $limit - $this->countGlobalChatsThisMonth($chatbotId));
+        return max(0, $limit - $this->getCachedGlobalChatsCount($chatbotId));
     }
 
     /**
      * Get remaining global questions this month
+     * Uses cached count for better performance
      */
     public function getRemainingGlobalQuestions(int|string $chatbotId): int {
         $limit = $this->getGlobalQuestionsLimit($chatbotId);
@@ -264,7 +269,7 @@ class PlanService {
             return self::UNLIMITED;
         }
 
-        return max(0, $limit - $this->countGlobalQuestionsThisMonth($chatbotId));
+        return max(0, $limit - $this->getCachedGlobalQuestionsCount($chatbotId));
     }
 
     /**
@@ -307,9 +312,12 @@ class PlanService {
 
     /**
      * Check if user can create a new chat
+     * Accepts optional pre-fetched plan to avoid duplicate lookups
      */
-    public function canCreateChat(int $userId, int|string $chatbotId): bool {
-        $plan = $this->getUserPlan($userId, $chatbotId);
+    public function canCreateChat(int $userId, int|string $chatbotId, ?array $plan = null): bool {
+        if ($plan === null) {
+            $plan = $this->getCachedUserPlan($userId, $chatbotId);
+        }
         
         if (!$plan) {
             return false;
@@ -322,7 +330,7 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentChats = $this->countUserChatsInPeriod($userId, $chatbotId, $period);
+        $currentChats = $this->getCachedUserChatsCount($userId, $chatbotId, $period);
 
         return $currentChats < $totalChats;
     }
@@ -345,9 +353,12 @@ class PlanService {
 
     /**
      * Check if user can ask a new question
+     * Accepts optional pre-fetched plan to avoid duplicate lookups
      */
-    public function canAskQuestion(int $userId, int|string $chatbotId): bool {
-        $plan = $this->getUserPlan($userId, $chatbotId);
+    public function canAskQuestion(int $userId, int|string $chatbotId, ?array $plan = null): bool {
+        if ($plan === null) {
+            $plan = $this->getCachedUserPlan($userId, $chatbotId);
+        }
         
         if (!$plan) {
             return false;
@@ -360,16 +371,19 @@ class PlanService {
         }
 
         $period = $plan["period"] ?? PlanPeriods::MONTH->value;
-        $currentQuestions = $this->countUserQuestionsInPeriod($userId, $chatbotId, $period);
+        $currentQuestions = $this->getCachedUserQuestionsCount($userId, $chatbotId, $period);
 
         return $currentQuestions < $totalQuestions;
     }
 
     /**
      * Check if question length is within plan limit
+     * Accepts optional pre-fetched plan to avoid duplicate lookups
      */
-    public function isQuestionSizeAllowed(int $userId, int|string $chatbotId, string $question): bool {
-        $plan = $this->getUserPlan($userId, $chatbotId);
+    public function isQuestionSizeAllowed(int $userId, int|string $chatbotId, string $question, ?array $plan = null): bool {
+        if ($plan === null) {
+            $plan = $this->getCachedUserPlan($userId, $chatbotId);
+        }
         
         if (!$plan) {
             return false;
@@ -492,5 +506,135 @@ class PlanService {
             'historySize'        => $plan["historySize"] ?? 0,
             'questionSize'       => $plan["questionSize"] ?? 0,
         ];
+    }
+
+    /**
+     * Get cached user plan with period-aware cache key
+     * Cache expires on period rollover automatically
+     */
+    public function getCachedUserPlan(int $userId, int|string $chatbotId): ?array {
+        if ($userId <= 0) {
+            return $this->getCachedPublicPlan($chatbotId);
+        }
+
+        $userPlanId = $this->planModel->getUserPlanId($chatbotId, $userId);
+        $period = PlanPeriods::MONTH->value;
+        
+        if ($userPlanId) {
+            $plan = $this->planModel->get($chatbotId, $userPlanId);
+            if ($plan) {
+                $period = $plan["period"] ?? PlanPeriods::MONTH->value;
+            }
+        }
+
+        $periodStart = $this->getPeriodStartDate($period);
+        $cacheKey = "wpb_chatbot_plan_{$chatbotId}_{$userId}_{$periodStart}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $plan = $this->getUserPlan($userId, $chatbotId);
+        set_transient($cacheKey, $plan, self::CACHE_TTL);
+
+        return $plan;
+    }
+
+    /**
+     * Get cached public plan for anonymous users
+     */
+    public function getCachedPublicPlan(int|string $chatbotId): ?array {
+        $cacheKey = "wpb_chatbot_public_plan_{$chatbotId}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return $cached;
+        }
+
+        $plan = $this->getPublicPlan($chatbotId);
+        set_transient($cacheKey, $plan, self::CACHE_TTL);
+
+        return $plan;
+    }
+
+    /**
+     * Get cached user chats count for the period
+     */
+    public function getCachedUserChatsCount(int $userId, int|string $chatbotId, string $period): int {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $periodStart = $this->getPeriodStartDate($period);
+        $cacheKey = "wpb_chatbot_chats_{$chatbotId}_{$userId}_{$periodStart}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return (int) $cached;
+        }
+
+        $count = $this->countUserChatsInPeriod($userId, $chatbotId, $period);
+        set_transient($cacheKey, $count, self::CACHE_TTL);
+
+        return $count;
+    }
+
+    /**
+     * Get cached user questions count for the period
+     */
+    public function getCachedUserQuestionsCount(int $userId, int|string $chatbotId, string $period): int {
+        if ($userId <= 0) {
+            return 0;
+        }
+
+        $periodStart = $this->getPeriodStartDate($period);
+        $cacheKey = "wpb_chatbot_questions_{$chatbotId}_{$userId}_{$periodStart}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return (int) $cached;
+        }
+
+        $count = $this->countUserQuestionsInPeriod($userId, $chatbotId, $period);
+        set_transient($cacheKey, $count, self::CACHE_TTL);
+
+        return $count;
+    }
+
+    /**
+     * Get cached global chats count for current month
+     */
+    public function getCachedGlobalChatsCount(int|string $chatbotId): int {
+        $month = date('Y-m');
+        $cacheKey = "wpb_chatbot_global_chats_{$chatbotId}_{$month}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return (int) $cached;
+        }
+
+        $count = $this->countGlobalChatsThisMonth($chatbotId);
+        set_transient($cacheKey, $count, self::CACHE_TTL);
+
+        return $count;
+    }
+
+    /**
+     * Get cached global questions count for current month
+     */
+    public function getCachedGlobalQuestionsCount(int|string $chatbotId): int {
+        $month = date('Y-m');
+        $cacheKey = "wpb_chatbot_global_questions_{$chatbotId}_{$month}";
+
+        $cached = get_transient($cacheKey);
+        if ($cached !== false) {
+            return (int) $cached;
+        }
+
+        $count = $this->countGlobalQuestionsThisMonth($chatbotId);
+        set_transient($cacheKey, $count, self::CACHE_TTL);
+
+        return $count;
     }
 }

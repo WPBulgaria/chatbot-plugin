@@ -30,6 +30,14 @@ class ChatAction {
         $perPage = isset($params['per_page']) ? absint($params['per_page']) : 20;
         $page = isset($params['page']) ? absint($params['page']) : 1;
         $userId = get_current_user_id();
+        $listAll = isset($params['list_all']) ? !!$params['list_all'] : false;
+
+
+        if ($listAll) {
+            $userId = 0;
+        }
+
+
 
 
         $urlParams = $request->get_url_params();
@@ -249,6 +257,15 @@ class ChatAction {
         header('Connection: keep-alive');
         header('X-Accel-Buffering: no');
         header('X-SSE: 1');
+
+       // CloudFlare fix: prevent CloudFlare from buffering SSE by sending a few padding messages.
+       // CloudFlare proxies may buffer small responses, so flush a few blank events to force a connection.
+       for ($cf_i = 0; $cf_i < 6; $cf_i++) {
+           echo ":\n\n";
+           flush();
+           if (function_exists('ob_flush')) { ob_flush(); }
+           usleep(20000); // 20ms between each to encourage CF pass-through
+       }
 
        if (user_rate_limit_exceeded()) {
             echo "event: error\n";
