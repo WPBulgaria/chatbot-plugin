@@ -69,6 +69,75 @@ class ChatModel extends BaseModel {
     }
 
     /**
+     * Build streaming payload for external services
+     * Extensible via filter hook
+     */
+    protected function buildStreamingPayload(int $chatbotId, string $message, ?int $chatId, array $context): array {
+        $configs = $this->chatbotModel->getConfig($chatbotId, false);
+        $messages = $context['messages'] ?? [];
+
+        // Build history
+        $history = $this->geminiService->buildHistory($messages, [
+            'windowSize' => $configs['windowSize'] ?? 10
+        ]);
+
+        $this->geminiService->setChatbotId($chatbotId);
+        $fileSearchStore = $this->geminiService->getFileSearchStore($configs['fileSearchStore'] ?? '');
+
+        $payload = [
+            'chatbotId' => $chatbotId,
+            'chatId' => $chatId,
+            'userId' => $context['userId'],
+            'message' => $message,
+            'isNewChat' => $context['isNewChat'],
+            'history' => $history,
+            'messages' => $messages,
+            'configs' => [
+                'model' => $configs['model'] ?? 'gemini-2.5-flash',
+                'systemInstructions' => $configs['systemInstructions'] ?? '',
+                'temperature' => $configs['temperature'] ?? 0.1,
+                'maxOutputTokens' => $configs['maxOutputTokens'] ?? 800,
+                'topP' => $configs['topP'] ?? 0.8,
+                'topK' => $configs['topK'] ?? 20,
+                'stopSequences' => $configs['stopSequences'] ?? [],
+                'windowSize' => $configs['windowSize'] ?? 10,
+                'fileSearchStore' => $fileSearchStore ?? null,
+            ],
+        ];
+
+        // Hook 2: Filter streaming payload
+        return apply_filters('wpb_chatbot_streaming_payload', $payload, $chatbotId, $chatId);
+    }
+
+    /**
+     * Handle custom streaming implementation
+     * Delegates to external service via action hook
+     */
+    protected function handleCustomStreaming(int $chatbotId, string $message, ?int $chatId, array $context): array {
+        // Create chat early if needed
+        $streamChatId = $chatId;
+        $title = '';
+        if ($context['isNewChat']) {
+            $title = $this->generateTitle($message);
+            $streamChatId = $this->create($chatbotId, $title, $context['messages'], $context['userId']);
+        }
+
+        // Build payload
+        $payload = $this->buildStreamingPayload($chatbotId, $message, $streamChatId, $context);
+        $payload['chatId'] = $streamChatId;
+        $payload['title'] = $title;
+
+        // Add user message
+        $messages = $context['messages'];
+        $this->addUserMessage($messages, $message);
+
+        // Hook 3: Allow addon to handle streaming
+        do_action('wpb_chatbot_handle_custom_streaming', $payload, $streamChatId, $messages, $this);
+
+        return [];
+    }
+
+    /**
      * List chats with pagination
      */
     public function list(int $userId = 0, int $perPage = 20, int $page = 1, int $chatbotId = 0): array {
@@ -125,6 +194,19 @@ class ChatModel extends BaseModel {
         $this->geminiService->setChatbotId($chatbotId);
         $context = $this->prepareChat($chatId, $userId);
 
+        // Hook 1: Allow addon to intercept streaming
+        $shouldUseCustomStreaming = apply_filters('wpb_chatbot_use_custom_streaming', false, [
+            'chatbotId' => $chatbotId,
+            'chatId' => $chatId,
+            'userId' => $context['userId'],
+            'message' => $message,
+            'isNewChat' => $context['isNewChat'],
+        ]);
+
+        if ($shouldUseCustomStreaming) {
+            return $this->handleCustomStreaming($chatbotId, $message, $chatId, $context);
+        }
+
         /** @var GeminiService $geminiService */
         $geminiService = $this->geminiService;
         /** @var int $contextUserId */
@@ -145,7 +227,10 @@ class ChatModel extends BaseModel {
         }
 
         $this->addUserMessage($messages, $message);
-        $history = $geminiService->buildHistory($messages, ['windowSize' => $context['configs']['windowSize'] ?? 10]);
+        
+        // Get configs for history window size
+        $configs = $this->chatbotModel->getConfig($chatbotId, false);
+        $history = $geminiService->buildHistory($messages, ['windowSize' => $configs['windowSize'] ?? 10]);
         
 
         try {
@@ -153,15 +238,18 @@ class ChatModel extends BaseModel {
                 $message,
                 $history,
                 function ($chunkText) use ($streamChatId, $isNewChat, $title) {
-                    $payload = json_encode([
+                    $payload = [
                         'success' => true,
                         'message' => $chunkText,
                         'chatId'  => $streamChatId,
                         'isNew'   => $isNewChat,
                         'title'   => $title
-                    ], JSON_UNESCAPED_UNICODE);
+                    ];
 
-                    echo "data: " . $payload . "\n\n";
+                    // Hook 4: Filter SSE payload
+                    $payload = apply_filters('wpb_chatbot_sse_chunk_payload', $payload, $chunkText);
+
+                    echo "data: " . json_encode($payload, JSON_UNESCAPED_UNICODE) . "\n\n";
 
                     if (ob_get_level() > 0) {
                         ob_end_flush();
@@ -172,6 +260,15 @@ class ChatModel extends BaseModel {
 
             $this->addModelMessage($messages, $responseText);
             $this->updateMessages($streamChatId, $messages);
+
+            // Hook 5: Post-stream callback
+            do_action('wpb_chatbot_after_stream', [
+                'chatId' => $streamChatId,
+                'message' => $message,
+                'response' => $responseText,
+                'messages' => $messages,
+                'userId' => $contextUserId,
+            ]);
 
             return [];
         } catch (\Exception $e) {
