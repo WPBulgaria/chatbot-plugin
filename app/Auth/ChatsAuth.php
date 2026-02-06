@@ -222,4 +222,11 @@ class ChatsAuth extends BaseAuth {
         }
         return $this->userCan($userId, 'edit_others_posts') || $this->userCan($userId, 'edit_post', $id);
     }
+
+    public function saveMessage(int|string $userId, int|string $id, int|string $chatbotId = 0): bool {
+        if ($this->isAdminsOnly($chatbotId)) {
+            return $this->currentUserCan('manage_options');
+        }
+        return $this->userCan($userId, 'edit_others_posts');
+    }
 }

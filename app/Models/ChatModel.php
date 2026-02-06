@@ -346,6 +346,17 @@ class ChatModel extends BaseModel {
         return $postId;
     }
 
+
+    /**
+     * Save message to chat
+     */
+    public function saveMessage(int $chatId, string $role, string $message): bool {
+        $messages = $this->getMessages($chatId);
+        $messages[] = $this->geminiService->createMessage($role, $message);
+        return $this->updateMessages($chatId, $messages);
+    }
+    
+
     /**
      * Get chat messages
      */

@@ -80,4 +80,8 @@ class ChatsAuthMock extends BaseAuthMock {
     public function restore(int|string $userId, int|string $id, ...$args): bool {
         return true;
     }
+
+    public function saveMessage(int|string $userId, int|string $id, int|string $chatbotId = 0): bool {
+        return true;
+    }
 }

@@ -204,3 +204,21 @@ add_action( 'rest_api_init', function () {
         }
     ) );
 });
+
+// POST /chats/{id}/messages - Save message to chat
+add_action( 'rest_api_init', function () {
+    register_rest_route( WPB_CHATBOT_API_PREFIX, '/chatbots/(?P<chatbot_id>\d+)/chats/(?P<id>\d+)/messages', array(
+        'methods' => 'POST',
+        'callback' => 'WPBulgaria\Chatbot\Actions\ChatAction::saveMessage',
+        'permission_callback' => function ($request) {
+
+            
+            $auth = wpb_chatbot_app(\WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory::class);
+            $result = $auth->saveMessage(get_current_user_id(), $request->get_param('id'), $request->get_param('chatbot_id'));
+            if ($auth->hasError() && !$result) {
+                return new \WP_Error("unauthorized", $auth->getError()->getMessage(), array("status" => 401));
+            }
+            return $result;
+        }
+    ) );
+});

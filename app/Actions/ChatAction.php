@@ -217,6 +217,30 @@ class ChatAction {
         }
     }
 
+    public static function saveMessage(\WP_REST_Request $request): \WP_REST_Response {
+        $params = $request->get_params();
+        $body = $request->get_json_params();
+
+        $message = $body['message'] ?? '';
+        $role = $body['role'] ?? '';
+        $chatId = isset($params['id']) ? absint($params['id']) : 0;
+        
+        if (empty($chatId)) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid chat ID"], 400);
+        }
+
+        if (empty($role) || !in_array($role, ['user', 'model', 'system'])) {
+            return new \WP_REST_Response(["success" => false, "message" => "Invalid role"], 400);
+        }
+
+        try {
+            wpb_chatbot_app(ChatModel::class)->saveMessage($chatId, $role, $message);
+            return new \WP_REST_Response(["success" => true], 200);
+        } catch (\Exception $e) {
+            $code = $e->getCode() ?: 500;
+            return new \WP_REST_Response(["success" => false, "message" => esc_html($e->getMessage())], $code);
+        }
+    }
     /**
      * Restore a trashed chat
      */
