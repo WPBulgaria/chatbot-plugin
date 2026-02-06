@@ -509,3 +509,5 @@ class ChatModel extends BaseModel {
         return sanitize_text_field($title);
     }
 }
+
+
