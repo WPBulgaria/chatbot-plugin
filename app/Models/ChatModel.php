@@ -119,7 +119,7 @@ class ChatModel extends BaseModel {
         $title = '';
         if ($context['isNewChat']) {
             $title = $this->generateTitle($message);
-            $streamChatId = $this->create($chatbotId, $title, $context['messages'], $context['userId']);
+            $streamChatId = $this->create($chatbotId, $title, is_array($context['messages']) ? $context['messages'] : [], $context['userId']);
         }
 
         // Build payload
@@ -502,8 +502,8 @@ class ChatModel extends BaseModel {
      * Generate a title from the first message
      */
     private static function generateTitle(string $message): string {
-        $title = substr($message, 0, 50);
-        if (strlen($message) > 50) {
+        $title = mb_substr($message, 0, 50);
+        if (mb_strlen($message) > 50) {
             $title .= "...";
         }
         return sanitize_text_field($title);
