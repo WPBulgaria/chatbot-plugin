@@ -13,13 +13,16 @@ use WPBulgaria\Chatbot\Models\PlanModel;
 use WPBulgaria\Chatbot\Models\SearchFileModel;
 use WPBulgaria\Chatbot\Models\ChatModel;
 use WPBulgaria\Chatbot\Models\ChatbotModel;
+use WPBulgaria\Chatbot\Models\StatsModel;
 use WPBulgaria\Chatbot\Contracts\AuthInterface;
 use WPBulgaria\Chatbot\Models\PostModel;
+use WPBulgaria\Chatbot\Utils\ResponseCache;
 use WPBulgaria\Chatbot\Auth\ChatsAuth;
 use WPBulgaria\Chatbot\Auth\ChatbotAuth;
 use WPBulgaria\Chatbot\Auth\ConfigsAuth;
 use WPBulgaria\Chatbot\Auth\FilesAuth;
 use WPBulgaria\Chatbot\Auth\PlansAuth;
+use WPBulgaria\Chatbot\Auth\StatsAuth;
 use WPBulgaria\Chatbot\Transactions\File\FileRemoveTransaction;
 use WPBulgaria\Chatbot\Transactions\File\FileUseTransaction;
 use WPBulgaria\Chatbot\Auth\Factory\ChatsAuthFactory;
@@ -27,6 +30,7 @@ use WPBulgaria\Chatbot\Auth\Factory\ChatbotAuthFactory;
 use WPBulgaria\Chatbot\Auth\Factory\ConfigsAuthFactory;
 use WPBulgaria\Chatbot\Auth\Factory\FilesAuthFactory;
 use WPBulgaria\Chatbot\Auth\Factory\PlansAuthFactory;
+use WPBulgaria\Chatbot\Auth\Factory\StatsAuthFactory;
 
 defined('ABSPATH') || exit;
 
@@ -79,6 +83,16 @@ class AppServiceProvider extends ServiceProvider {
         $container->singleton(ChatbotModel::class, function ($c) {
             return new ChatbotModel($c->make(PostModel::class), $c->make(ConfigsModel::class));
         });
+
+        // Register StatsModel as singleton
+        $container->singleton(StatsModel::class, function ($c) {
+            return new StatsModel($c->make(ChatModel::class));
+        });
+
+        // Register ResponseCache as singleton
+        $container->singleton(ResponseCache::class, function ($c) {
+            return new ResponseCache('wpb_chatbot_stats', 600);
+        });
         
         // Register ChatsAuth as singleton
         $container->singleton(ChatsAuth::class, function ($c) {
@@ -106,6 +120,11 @@ class AppServiceProvider extends ServiceProvider {
         // Register PlansAuth as singleton
         $container->singleton(PlansAuth::class, function ($c) {
             return new PlansAuth($c->make(ConfigsModel::class));
+        });
+
+        // Register StatsAuth as singleton
+        $container->singleton(StatsAuth::class, function ($c) {
+            return new StatsAuth($c->make(ConfigsModel::class));
         });
 
         // Register FileRemoveTransaction as singleton
@@ -171,6 +190,11 @@ class AppServiceProvider extends ServiceProvider {
             return PlansAuthFactory::create($c->make(ConfigsModel::class));
         });
 
+        // Register StatsAuthFactory as singleton
+        $container->singleton(StatsAuthFactory::class, function ($c) {
+            return StatsAuthFactory::create($c->make(ConfigsModel::class));
+        });
+
         // Register aliases for convenience
         $container->alias(GeminiService::class, 'gemini');
         $container->alias(ChatService::class, 'chat');
@@ -178,6 +202,7 @@ class AppServiceProvider extends ServiceProvider {
         $container->alias(ChatbotModel::class, 'chatbotModel');
         $container->alias(ConfigsModel::class, 'config');
         $container->alias(PlanService::class, 'plan');
+        $container->alias(ResponseCache::class, 'responseCache');
     }
 
     /**
