@@ -96,7 +96,8 @@ class GeminiService {
      */
     public function getSystemInstructions(): ?string {
         $configs = $this->getConfigs();
-        return $configs["systemInstructions"] ?? null;
+        $instructions = $configs["systemInstructions"] ?? null;
+        return apply_filters('wpb_chatbot_system_instructions', $instructions, $this->getChatbotId(), $configs);
     }
 
     public function listModels(): array {
@@ -201,6 +202,8 @@ class GeminiService {
             error_log("Failed to add file search store to model: " . $e->getMessage());
         }
 
+        $model = apply_filters('wpb_chatbot_gemini_model', $model, $this->getChatbotId(), $configs);
+
         return $model;
     }
 
@@ -208,6 +211,8 @@ class GeminiService {
      * Build chat history for Gemini from messages array
      */
     public function buildHistory(array $messages, array $config = []): array {
+        $config = apply_filters('wpb_chatbot_history_config', $config, $this->chatbotId);
+
         $history = [];
         $messagesToProcess = array_slice($messages, 0, -1);
 

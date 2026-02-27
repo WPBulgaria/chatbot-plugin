@@ -210,7 +210,7 @@ class ChatbotModel extends BaseModel {
     private function formatChatbot(\WP_Post $post, array $models = []): array {
         $config = $this->getConfig($post->ID);
 
-        return [
+        $result = [
             'id'          => $post->ID,
             'title'       => $post->post_title ?: "Untitled Chatbot",
             'description' => $post->post_content,
@@ -220,5 +220,7 @@ class ChatbotModel extends BaseModel {
             'status'      => $post->post_status,
             'models'      => $models,
         ];
+
+        return apply_filters('wpb_chatbot_chatbot_data', $result, $post);
     }
 }

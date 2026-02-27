@@ -98,6 +98,7 @@ class ChatAction {
             exit();
         }
 
+        do_action('wpb_chatbot_before_chat', $chatbotId, $body);
 
         $validator = ChatValidator::make();
 
@@ -303,6 +304,8 @@ class ChatAction {
             flush();
             exit();
         }
+
+        do_action('wpb_chatbot_before_chat', $chatbotId, $body);
 
         $validator = ChatValidator::make();
 
