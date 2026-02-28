@@ -71,10 +71,22 @@ class PlanModel {
             return null;
         }
 
-        foreach ($planIds as $planId) {
-            if ($planId["chatbotId"] === $chatbotId) {
-                return $planId["planId"];
+        $targetChatbotId = (int) $chatbotId;
+
+        foreach ($planIds as $planData) {
+            if (!is_array($planData)) {
+                continue;
             }
+
+            // Support both current and legacy key names.
+            $entryChatbotId = (int) ($planData['chatbotId'] ?? $planData['chatbot_id'] ?? 0);
+            $entryPlanId = (string) ($planData['planId'] ?? $planData['plan_id'] ?? '');
+
+            if ($entryChatbotId !== $targetChatbotId || $entryPlanId === '') {
+                continue;
+            }
+
+            return $entryPlanId;
         }
 
         return null;
