@@ -45,6 +45,11 @@ class ChatModel extends BaseModel {
 
         $messages = $isNewChat ? [] : ($chat['messages'] ?? []);
 
+        // Allow an add-on (e.g. consultant-math-sync) to supply client-side history
+        // instead of the DB-stored messages. When no add-on hooks this filter it
+        // returns $messages unchanged, preserving the existing behaviour.
+        $messages = apply_filters( 'wpb_chatbot_messages_for_context', $messages, $chatId, $isNewChat );
+
         return [
             'geminiService' => $this->geminiService,
             'userId'        => $userId,
@@ -341,7 +346,11 @@ class ChatModel extends BaseModel {
             throw new \Exception("Failed to create chat: " . $postId->get_error_message(), 500);
         }
 
-        $this->postModel->updateMeta($postId, self::META_MESSAGES, $messages);
+        // Same E2E guard as updateMessages(): write empty array when persistence is suppressed.
+        $messagesToStore = apply_filters( 'wpb_chatbot_should_persist_messages', true, null )
+            ? $messages
+            : [];
+        $this->postModel->updateMeta($postId, self::META_MESSAGES, $messagesToStore);
 
         return $postId;
     }
@@ -379,7 +388,13 @@ class ChatModel extends BaseModel {
             throw new \Exception("Chat not found (8)", 404);
         }
 
-        $this->postModel->updateMeta($id, self::META_MESSAGES, $messages);
+        // Allow an add-on to suppress message persistence (e.g. for E2E encryption
+        // where the client holds the conversation). Default true = persist as usual.
+        if ( apply_filters( 'wpb_chatbot_should_persist_messages', true, $id ) ) {
+            $this->postModel->updateMeta($id, self::META_MESSAGES, $messages);
+        } else {
+            $this->postModel->updateMeta($id, self::META_MESSAGES, []);
+        }
 
         $this->postModel->update([
             'ID'                => $id,
