@@ -149,27 +149,45 @@ function wpb_chatbot_save_user_plan_field(int $userId): void {
 
     try {
         $planModel = wpb_chatbot_resolve(PlanModel::class);
-        
-        // Clear existing plans
-        delete_user_meta($userId, PlanModel::USER_PLAN_META_KEY);
-        
-        // Save plans for each chatbot
-        foreach ($_POST['wpb_chatbot_user_plans'] as $chatbotId => $planId) {
+
+        $submitted          = $_POST['wpb_chatbot_user_plans'];
+        $submitted_chatbot_ids = array_map('absint', array_keys($submitted));
+
+        // Only replace entries for chatbots present in the form.
+        // Entries written externally (e.g. by PMPro sync) are left untouched.
+        $existing = get_user_meta($userId, PlanModel::USER_PLAN_META_KEY, true) ?: [];
+        $kept = array_values(array_filter(
+            is_array($existing) ? $existing : [],
+            static function ($entry) use ($submitted_chatbot_ids): bool {
+                if (!is_array($entry)) {
+                    return false;
+                }
+                $entryId = (int) ($entry['chatbotId'] ?? $entry['chatbot_id'] ?? 0);
+                return !in_array($entryId, $submitted_chatbot_ids, true);
+            }
+        ));
+
+        $updated = $kept;
+        foreach ($submitted as $chatbotId => $planId) {
             $chatbotId = absint($chatbotId);
-            $planId = sanitize_text_field($planId);
-            
+            $planId    = sanitize_text_field($planId);
+
             if (empty($chatbotId) || empty($planId)) {
                 continue;
             }
 
-            // Verify the plan exists for this chatbot
             $plan = $planModel->get($chatbotId, $planId);
             if (empty($plan)) {
                 continue;
             }
 
-            $planModel->setUserPlan($chatbotId, $userId, $planId);
+            $updated[] = [
+                'chatbotId' => $chatbotId,
+                'planId'    => $planId,
+            ];
         }
+
+        update_user_meta($userId, PlanModel::USER_PLAN_META_KEY, $updated);
     } catch (\Exception $e) {
         error_log('WPB Chatbot: Failed to save user plans - ' . $e->getMessage());
     }

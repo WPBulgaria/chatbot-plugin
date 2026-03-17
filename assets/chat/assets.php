@@ -2,6 +2,6 @@
 defined('ABSPATH') || exit;
 
 return [
-    'css' => '/assets/index-BC8bXLoC.css',
-    'js' =>  '/assets/index-CekCRC7j.js',
+    'css' => '/assets/index-Dl4DB4zT.css',
+    'js' =>  '/assets/index-CBrRLq67.js',
 ];
